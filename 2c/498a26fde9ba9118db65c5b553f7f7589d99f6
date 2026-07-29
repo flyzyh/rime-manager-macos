@@ -1,0 +1,36 @@
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.0.1",
+  "base_commit_sha": "2c498a26fde9ba9118db65c5b553f7f7589d99f6",
+  "prompts": {},
+  "commit_stats": {
+    "git_diff_added_lines": 135,
+    "git_diff_deleted_lines": 2,
+    "ai_additions": 0,
+    "ai_accepted": 0,
+    "BYMC": 135,
+    "mixed_additions": 0,
+    "BYAC": 0,
+    "BYRC": 0,
+    "per_file": {
+      ".github/workflows/build.yml": {
+        "BYMC": [
+          "1-32"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "README.md": {
+        "BYMC": [
+          "1-103"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      }
+    }
+  },
+  "ipa_account": "zhouyuhan",
+  "commit_timestamp": 1785311285,
+  "requirement_id": ""
+}
