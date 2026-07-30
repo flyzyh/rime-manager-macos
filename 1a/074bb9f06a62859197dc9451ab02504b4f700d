@@ -1,0 +1,467 @@
+.gitignore
+  eb315b45fc683d3e 75-76
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.0.1",
+  "base_commit_sha": "1a074bb9f06a62859197dc9451ab02504b4f700d",
+  "prompts": {
+    "eb315b45fc683d3e": {
+      "agent_id": {
+        "tool": "qoder-cn",
+        "id": "task-5c83637690d445fea15a.session.execution",
+        "model": "unknown"
+      },
+      "human_author": "周宇涵 <zhouyuhan@cmhi.chinamobile.com>",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 0,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    }
+  },
+  "commit_stats": {
+    "git_diff_added_lines": 8689,
+    "git_diff_deleted_lines": 0,
+    "ai_additions": 2,
+    "ai_accepted": 2,
+    "BYMC": 8687,
+    "mixed_additions": 0,
+    "BYAC": 2,
+    "BYRC": 0,
+    "per_file": {
+      ".github/workflows/build.yml": {
+        "BYMC": [
+          "1-35"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      ".github/workflows/swift.yml": {
+        "BYMC": [
+          "1-32"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      ".gitignore": {
+        "BYMC": [
+          "1-74"
+        ],
+        "BYAC": [
+          "75-76"
+        ],
+        "BYRC": []
+      },
+      "LICENSE": {
+        "BYMC": [
+          "1-201"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "Makefile": {
+        "BYMC": [
+          "1-46"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "Package.resolved": {
+        "BYMC": [
+          "1-15"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "Package.swift": {
+        "BYMC": [
+          "1-27"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "README.md": {
+        "BYMC": [
+          "1-111"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/App/AppState.swift": {
+        "BYMC": [
+          "1-185"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/App/ConfigManager.swift": {
+        "BYMC": [
+          "1-137"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/App/FileBrowserModel.swift": {
+        "BYMC": [
+          "1-89"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/App/ImportExportModel.swift": {
+        "BYMC": [
+          "1-132"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/App/RimeManagerApp.swift": {
+        "BYMC": [
+          "1-117"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Models/AppError.swift": {
+        "BYMC": [
+          "1-56"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Models/AppFeedback.swift": {
+        "BYMC": [
+          "1-108"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Models/ColorScheme.swift": {
+        "BYMC": [
+          "1-89"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Models/DictSettings.swift": {
+        "BYMC": [
+          "1-65"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Models/FileType.swift": {
+        "BYMC": [
+          "1-85"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Models/InputSettings.swift": {
+        "BYMC": [
+          "1-164"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Models/RimeConfigFile.swift": {
+        "BYMC": [
+          "1-42"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Models/RimeSchema.swift": {
+        "BYMC": [
+          "1-120"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Models/SchemaSettings.swift": {
+        "BYMC": [
+          "1-140"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Models/SquirrelConfig.swift": {
+        "BYMC": [
+          "1-385"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Services/DeployService.swift": {
+        "BYMC": [
+          "1-15"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Services/DirectoryWatcher.swift": {
+        "BYMC": [
+          "1-101"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Services/FileManagerService.swift": {
+        "BYMC": [
+          "1-250"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Services/Protocols.swift": {
+        "BYMC": [
+          "1-39"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Services/RimePathService.swift": {
+        "BYMC": [
+          "1-84"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Services/SchemaAnalyzer.swift": {
+        "BYMC": [
+          "1-276"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Services/YAMLParseService.swift": {
+        "BYMC": [
+          "1-55"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Utilities/GlassEffects.swift": {
+        "BYMC": [
+          "1-70"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Utilities/LocaleManager.swift": {
+        "BYMC": [
+          "1-293"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Utilities/YAMLSyntaxHighlighter.swift": {
+        "BYMC": [
+          "1-141"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Views/Components/CandidatePreviewView.swift": {
+        "BYMC": [
+          "1-65"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Views/Components/ToastView.swift": {
+        "BYMC": [
+          "1-23"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Views/Config/LivePreviewView.swift": {
+        "BYMC": [
+          "1-330"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Views/Config/SquirrelConfigView.swift": {
+        "BYMC": [
+          "1-324"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Views/ContentView.swift": {
+        "BYMC": [
+          "1-78"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Views/Editor/EditorView.swift": {
+        "BYMC": [
+          "1-238"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Views/Editor/HighlightedEditorView.swift": {
+        "BYMC": [
+          "1-247"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Views/Files/FileEditorView.swift": {
+        "BYMC": [
+          "1-64"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Views/MainView.swift": {
+        "BYMC": [
+          "1-210"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Views/Preview/ColorSchemePreviewView.swift": {
+        "BYMC": [
+          "1-217"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Views/Preview/DictPreviewView.swift": {
+        "BYMC": [
+          "1-178"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Views/Preview/PreviewPanelView.swift": {
+        "BYMC": [
+          "1-274"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Views/Preview/SchemaPreviewView.swift": {
+        "BYMC": [
+          "1-558"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Views/Settings/AppearanceSettingsView.swift": {
+        "BYMC": [
+          "1-388"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Views/Settings/BackupListView.swift": {
+        "BYMC": [
+          "1-174"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Views/Settings/DictListView.swift": {
+        "BYMC": [
+          "1-113"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Views/Settings/InputSettingsView.swift": {
+        "BYMC": [
+          "1-86"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Views/Settings/SchemaListView.swift": {
+        "BYMC": [
+          "1-135"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Views/SettingsView.swift": {
+        "BYMC": [
+          "1-137"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Views/Sidebar/SidebarView.swift": {
+        "BYMC": [
+          "1-189"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "Tests/ColorSchemeTests.swift": {
+        "BYMC": [
+          "1-97"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "Tests/DictSettingsTests.swift": {
+        "BYMC": [
+          "1-135"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "Tests/FileManagerServiceTests.swift": {
+        "BYMC": [
+          "1-141"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "Tests/InputSettingsTests.swift": {
+        "BYMC": [
+          "1-148"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "Tests/SchemaSettingsTests.swift": {
+        "BYMC": [
+          "1-117"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "Tests/SquirrelConfigTests.swift": {
+        "BYMC": [
+          "1-122"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "scripts/gen_icon.swift": {
+        "BYMC": [
+          "1-108"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "scripts/make_icon.sh": {
+        "BYMC": [
+          "1-12"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      }
+    }
+  },
+  "ipa_account": "zhouyuhan",
+  "commit_timestamp": 1785396871,
+  "requirement_id": ""
+}
