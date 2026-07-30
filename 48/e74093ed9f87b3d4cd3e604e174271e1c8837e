@@ -1,0 +1,32 @@
+RimeManager/Views/Settings/InputSettingsView.swift
+  eb315b45fc683d3e 85
+RimeManager/Models/SquirrelConfig.swift
+  eb315b45fc683d3e 207-210,223-224,226-236,241,275,282
+RimeManager/Models/InputSettings.swift
+  eb315b45fc683d3e 134
+.gitignore
+  eb315b45fc683d3e 75-76
+RimeManager/Views/Settings/AppearanceSettingsView.swift
+  eb315b45fc683d3e 150,169,182
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.0.1",
+  "base_commit_sha": "48e74093ed9f87b3d4cd3e604e174271e1c8837e",
+  "prompts": {
+    "eb315b45fc683d3e": {
+      "agent_id": {
+        "tool": "qoder-cn",
+        "id": "task-5c83637690d445fea15a.session.execution",
+        "model": "unknown"
+      },
+      "human_author": null,
+      "messages": [],
+      "total_additions": 404,
+      "total_deletions": 4,
+      "accepted_lines": 417,
+      "overriden_lines": 0
+    }
+  },
+  "requirement_id": ""
+}
