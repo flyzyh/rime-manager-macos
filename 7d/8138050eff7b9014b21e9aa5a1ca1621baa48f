@@ -1,0 +1,211 @@
+RimeManager/Views/Settings/AppearanceSettingsView.swift
+  eb315b45fc683d3e 26,51-94,166-174,189-193,198-226,238,257,271-344,355-357,364-366,374-376,382-384,547
+RimeManager/Views/Settings/InputSettingsView.swift
+  eb315b45fc683d3e 8,15-17,66-70,95-214
+RimeManager/Models/SquirrelConfig.swift
+  eb315b45fc683d3e 29-30,48-52,126-135,150-157,159,161,163,168-172,219,235-243,248,250-252,254-258,274-298,300-308,357,364,385-386,400-412,431-449,453,467-486,516-541
+RimeManager/Views/ContentView.swift
+  eb315b45fc683d3e 22
+RimeManager/App/AppState.swift
+  eb315b45fc683d3e 136-143,145-153,155
+RimeManager/Views/Components/CandidatePreviewView.swift
+  eb315b45fc683d3e 4,14-17,21-22,26,29-33,37-46,49,58-64,66-125,130-237
+RimeManager/Utilities/LocaleManager.swift
+  eb315b45fc683d3e 187,287-327
+RimeManager/Models/InputSettings.swift
+  eb315b45fc683d3e 27-33,100-115,158-162
+RimeManager/Views/Files/FileEditorView.swift
+  eb315b45fc683d3e 7,13,17,22
+RimeManager/App/RimeManagerApp.swift
+  eb315b45fc683d3e 36,39,41
+RimeManager/Views/Preview/PreviewPanelView.swift
+  eb315b45fc683d3e 19
+RimeManager/Views/MainView.swift
+  eb315b45fc683d3e 36,68-69,80-91,149-150,156-162,165-167,169-170
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.0.1",
+  "base_commit_sha": "7d8138050eff7b9014b21e9aa5a1ca1621baa48f",
+  "prompts": {
+    "eb315b45fc683d3e": {
+      "agent_id": {
+        "tool": "qoder-cn",
+        "id": "task-5c83637690d445fea15a.session.execution",
+        "model": "unknown"
+      },
+      "human_author": "flyzyh <flyzyh@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 687,
+      "total_deletions": 252,
+      "accepted_lines": 1173,
+      "overriden_lines": 1
+    }
+  },
+  "commit_stats": {
+    "git_diff_added_lines": 816,
+    "git_diff_deleted_lines": 123,
+    "ai_additions": 800,
+    "ai_accepted": 800,
+    "BYMC": 6,
+    "mixed_additions": 0,
+    "BYAC": 800,
+    "BYRC": 0,
+    "per_file": {
+      "RimeManager/App/AppState.swift": {
+        "BYMC": [],
+        "BYAC": [
+          "136-143",
+          "145-153",
+          "155"
+        ],
+        "BYRC": []
+      },
+      "RimeManager/App/RimeManagerApp.swift": {
+        "BYMC": [],
+        "BYAC": [
+          "36",
+          "39",
+          "41"
+        ],
+        "BYRC": []
+      },
+      "RimeManager/Models/InputSettings.swift": {
+        "BYMC": [],
+        "BYAC": [
+          "27-33",
+          "100-115",
+          "158-162"
+        ],
+        "BYRC": []
+      },
+      "RimeManager/Models/SquirrelConfig.swift": {
+        "BYMC": [
+          "229-232",
+          "299"
+        ],
+        "BYAC": [
+          "29-30",
+          "48-52",
+          "126-135",
+          "150-157",
+          "159",
+          "161",
+          "163",
+          "168-172",
+          "219",
+          "235-243",
+          "248",
+          "250-252",
+          "254-258",
+          "274-298",
+          "300-308",
+          "357",
+          "364",
+          "385-386",
+          "400-412",
+          "431-449",
+          "453",
+          "467-486",
+          "516-541"
+        ],
+        "BYRC": []
+      },
+      "RimeManager/Utilities/LocaleManager.swift": {
+        "BYMC": [],
+        "BYAC": [
+          "187",
+          "287-327"
+        ],
+        "BYRC": []
+      },
+      "RimeManager/Views/Components/CandidatePreviewView.swift": {
+        "BYMC": [],
+        "BYAC": [
+          "4",
+          "14-17",
+          "21-22",
+          "26",
+          "29-33",
+          "37-46",
+          "49",
+          "58-64",
+          "66-125",
+          "130-237"
+        ],
+        "BYRC": []
+      },
+      "RimeManager/Views/ContentView.swift": {
+        "BYMC": [],
+        "BYAC": [
+          "22"
+        ],
+        "BYRC": []
+      },
+      "RimeManager/Views/Files/FileEditorView.swift": {
+        "BYMC": [],
+        "BYAC": [
+          "7",
+          "13",
+          "17",
+          "22"
+        ],
+        "BYRC": []
+      },
+      "RimeManager/Views/MainView.swift": {
+        "BYMC": [],
+        "BYAC": [
+          "36",
+          "68-69",
+          "80-91",
+          "149-150",
+          "156-162",
+          "165-167",
+          "169-170"
+        ],
+        "BYRC": []
+      },
+      "RimeManager/Views/Preview/PreviewPanelView.swift": {
+        "BYMC": [],
+        "BYAC": [
+          "19"
+        ],
+        "BYRC": []
+      },
+      "RimeManager/Views/Settings/AppearanceSettingsView.swift": {
+        "BYMC": [
+          "345"
+        ],
+        "BYAC": [
+          "26",
+          "51-94",
+          "166-174",
+          "189-193",
+          "198-226",
+          "238",
+          "257",
+          "271-344",
+          "355-357",
+          "364-366",
+          "374-376",
+          "382-384",
+          "547"
+        ],
+        "BYRC": []
+      },
+      "RimeManager/Views/Settings/InputSettingsView.swift": {
+        "BYMC": [],
+        "BYAC": [
+          "8",
+          "15-17",
+          "66-70",
+          "95-214"
+        ],
+        "BYRC": []
+      }
+    }
+  },
+  "ipa_account": "zhouyuhan",
+  "commit_timestamp": 1785481644,
+  "requirement_id": ""
+}
