@@ -1,0 +1,45 @@
+Makefile
+  eb315b45fc683d3e 28
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.0.1",
+  "base_commit_sha": "1b31e89857a12a56a5d2d5277a8f2627853ccbb3",
+  "prompts": {
+    "eb315b45fc683d3e": {
+      "agent_id": {
+        "tool": "qoder-cn",
+        "id": "task-5c83637690d445fea15a.session.execution",
+        "model": "unknown"
+      },
+      "human_author": "flyzyh <flyzyh@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 1,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  },
+  "commit_stats": {
+    "git_diff_added_lines": 1,
+    "git_diff_deleted_lines": 1,
+    "ai_additions": 1,
+    "ai_accepted": 1,
+    "BYMC": 0,
+    "mixed_additions": 0,
+    "BYAC": 1,
+    "BYRC": 0,
+    "per_file": {
+      "Makefile": {
+        "BYMC": [],
+        "BYAC": [
+          "28"
+        ],
+        "BYRC": []
+      }
+    }
+  },
+  "ipa_account": "zhouyuhan",
+  "commit_timestamp": 1785486631,
+  "requirement_id": ""
+}
