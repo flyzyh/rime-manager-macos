@@ -24,6 +24,13 @@ final class InputSettings: ObservableObject {
     @Published var capsLockSwitch: Bool = true        // Good old caps lock behavior
     @Published var shiftSwitch: String = "commit_code" // Shift key behavior
 
+    // MARK: - Translator Engine
+
+    @Published var enableEncoder: Bool = true         // 自动造词
+    @Published var enableSentence: Bool = true        // 整句输入
+    @Published var enableUserDict: Bool = true        // 用户词典
+    @Published var encodeCommitHistory: Bool = true   // 自动编码历史
+
     // MARK: - Schema info (read-only)
 
     @Published var schemaName: String = ""
@@ -90,6 +97,22 @@ final class InputSettings: ObservableObject {
                     shiftSwitch = switchKey["Shift_L"] ?? "commit_code"
                 }
             }
+
+            // Translator engine switches
+            if let translator = root["translator"] as? [String: Any] {
+                enableEncoder = translator["enable_encoder"] as? Bool ?? true
+                enableSentence = translator["enable_sentence"] as? Bool ?? true
+                enableUserDict = translator["enable_user_dict"] as? Bool ?? true
+                encodeCommitHistory = translator["encode_commit_history"] as? Bool ?? true
+            }
+        }
+
+        // Also check schema-level translator settings
+        if let translator = rawSchemaDict["translator"] as? [String: Any] {
+            enableEncoder = translator["enable_encoder"] as? Bool ?? enableEncoder
+            enableSentence = translator["enable_sentence"] as? Bool ?? enableSentence
+            enableUserDict = translator["enable_user_dict"] as? Bool ?? enableUserDict
+            encodeCommitHistory = translator["encode_commit_history"] as? Bool ?? encodeCommitHistory
         }
     }
 
@@ -131,6 +154,12 @@ final class InputSettings: ObservableObject {
                     "Control_L": "noop",
                     "Control_R": "noop",
                 ]
+            ],
+            "translator": [
+                "enable_encoder": enableEncoder,
+                "enable_sentence": enableSentence,
+                "enable_user_dict": enableUserDict,
+                "encode_commit_history": encodeCommitHistory,
             ],
             // Ensure Return key works correctly in web editors
             "key_binder/bindings/+": [

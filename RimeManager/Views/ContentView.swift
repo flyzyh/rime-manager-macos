@@ -19,7 +19,7 @@ struct ContentView: View {
             case .error(let msg): errorView(msg)
             }
         }
-        .frame(minWidth: 960, minHeight: 640)
+        .frame(minWidth: 750, minHeight: 500)
         .onAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 NSApp.activate(ignoringOtherApps: true)

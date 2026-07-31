@@ -16,8 +16,7 @@ struct PreviewPanelView: View {
                 noSelectionView
             }
         }
-        .frame(minWidth: 260)
-        .navigationSplitViewColumnWidth(min: 240, ideal: 300, max: 450)
+        .frame(minWidth: 180)
     }
 
     // MARK: - Header

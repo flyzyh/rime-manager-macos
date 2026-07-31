@@ -133,11 +133,26 @@ final class AppState: ObservableObject {
     // MARK: - Rime deployment
 
     func deployRime() {
+        let deployer = "/Library/Input Methods/Squirrel.app/Contents/MacOS/rime_deployer"
+        let squirrelBin = "/Library/Input Methods/Squirrel.app/Contents/MacOS/Squirrel"
+        let sharedSupport = "/Library/Input Methods/Squirrel.app/Contents/SharedSupport"
+        guard let rimeDir = rimeDirectoryURL else {
+            FeedbackManager.shared.showError("error.dir_not_set".localized)
+            return
+        }
+
         let task = Process()
-        task.launchPath = "/Library/Input Methods/Squirrel.app/Contents/MacOS/Squirrel"
-        task.arguments = ["--reload"]
-        task.terminationHandler = { _ in
+        task.launchPath = deployer
+        task.arguments = ["--build", rimeDir.path, sharedSupport]
+        task.terminationHandler = { [weak self] _ in
+            // After build, signal Squirrel to reload
+            let signal = Process()
+            signal.launchPath = squirrelBin
+            signal.arguments = ["--reload"]
+            try? signal.run()
+
             Task { @MainActor in
+                self?.configManager.loadAllConfigs(in: self?.rimeDirectoryURL)
                 FeedbackManager.shared.showSuccess("deploy.success".localized)
             }
         }

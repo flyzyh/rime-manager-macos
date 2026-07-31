@@ -23,6 +23,7 @@ struct AppearanceSettingsView: View {
 
             layoutSection
             fontSection
+            spacingSection
             effectsSection
         }
         .formStyle(.grouped)
@@ -45,6 +46,50 @@ struct AppearanceSettingsView: View {
         } else {
             config.colorSchemeLightName = newName
         }
+    }
+
+    // MARK: - Scheme-aware bindings
+
+    /// Creates a Binding<Double> that reads from active scheme (or fallback to config), writes to active scheme.
+    private func schemeDoubleBinding(
+        schemeKeyPath: ReferenceWritableKeyPath<EditableColorScheme, Double?>,
+        configKeyPath: ReferenceWritableKeyPath<SquirrelConfig, Double>
+    ) -> Binding<Double> {
+        Binding(
+            get: {
+                if let scheme = self.activeScheme, let val = scheme[keyPath: schemeKeyPath] {
+                    return val
+                }
+                return self.config[keyPath: configKeyPath]
+            },
+            set: { newVal in
+                if let scheme = self.activeScheme {
+                    scheme[keyPath: schemeKeyPath] = newVal
+                }
+                self.config[keyPath: configKeyPath] = newVal
+            }
+        )
+    }
+
+    /// Creates a Binding<Bool> that reads from active scheme (or fallback to config), writes to active scheme.
+    private func schemeBoolBinding(
+        schemeKeyPath: ReferenceWritableKeyPath<EditableColorScheme, Bool?>,
+        configKeyPath: ReferenceWritableKeyPath<SquirrelConfig, Bool>
+    ) -> Binding<Bool> {
+        Binding(
+            get: {
+                if let scheme = self.activeScheme, let val = scheme[keyPath: schemeKeyPath] {
+                    return val
+                }
+                return self.config[keyPath: configKeyPath]
+            },
+            set: { newVal in
+                if let scheme = self.activeScheme {
+                    scheme[keyPath: schemeKeyPath] = newVal
+                }
+                self.config[keyPath: configKeyPath] = newVal
+            }
+        )
     }
 
     // MARK: - Preview + Color (coupled, inside a single Section)
@@ -118,6 +163,15 @@ struct AppearanceSettingsView: View {
             }
             .pickerStyle(.segmented)
 
+            Picker("appearance.candidate_layout".localized, selection: Binding(
+                get: { config.candidateListLayout },
+                set: { config.candidateListLayout = $0 }
+            )) {
+                Text("appearance.layout_linear".localized).tag(CandidateLayout.linear)
+                Text("appearance.layout_stacked".localized).tag(CandidateLayout.stacked)
+                Text("appearance.layout_tabled".localized).tag(CandidateLayout.tabled)
+            }
+
             intSliderRow(
                 label: "input.page_size".localized,
                 value: Binding(
@@ -132,10 +186,44 @@ struct AppearanceSettingsView: View {
                 set: { config.inlinePreedit = $0 }
             ))
 
+            Toggle("appearance.inline_candidate".localized, isOn: Binding(
+                get: { config.inlineCandidate },
+                set: { config.inlineCandidate = $0 }
+            ))
+
             Toggle("appearance.show_paging".localized, isOn: Binding(
                 get: { config.showPaging },
                 set: { config.showPaging = $0 }
             ))
+
+            Toggle("appearance.mutual_exclusive".localized, isOn: schemeBoolBinding(
+                schemeKeyPath: \.schemeMutualExclusive,
+                configKeyPath: \.mutualExclusive
+            ))
+
+            Toggle("appearance.remember_size".localized, isOn: Binding(
+                get: { config.rememberSize },
+                set: { config.rememberSize = $0 }
+            ))
+
+            LabeledContent("appearance.candidate_format".localized) {
+                TextField("%c. %@", text: Binding(
+                    get: { config.candidateFormat },
+                    set: { config.candidateFormat = $0 }
+                ))
+                .textFieldStyle(.roundedBorder)
+                .frame(width: 120)
+            }
+
+            Picker("appearance.status_message".localized, selection: Binding(
+                get: { config.statusMessageType },
+                set: { config.statusMessageType = $0 }
+            )) {
+                Text("Mix").tag(StatusMessageType.mix)
+                Text("Long").tag(StatusMessageType.long)
+                Text("Short").tag(StatusMessageType.short)
+                Text("None").tag(StatusMessageType.none)
+            }
         }
     }
 
@@ -147,7 +235,7 @@ struct AppearanceSettingsView: View {
                 get: { config.fontFace },
                 set: { config.fontFace = $0 }
             )) {
-                ForEach(["PingFangSC", "PingFangHK", "Heiti SC", "Songti SC", "Kaiti SC", "SF Pro", "Menlo", "Helvetica Neue"], id: \.self) {
+                ForEach(["PingFang SC", "PingFang HK", "Heiti SC", "Songti SC", "Kaiti SC", "SF Pro", "Menlo", "Helvetica Neue", "Lucida Grande"], id: \.self) {
                     Text($0)
                 }
             }
@@ -166,7 +254,7 @@ struct AppearanceSettingsView: View {
                 get: { config.labelFontFace },
                 set: { config.labelFontFace = $0 }
             )) {
-                ForEach(["PingFangSC", "PingFangHK", "Heiti SC", "SF Pro", "Menlo"], id: \.self) {
+                ForEach(["PingFang SC", "PingFang HK", "Heiti SC", "SF Pro", "Menlo", "Lucida Grande"], id: \.self) {
                     Text($0)
                 }
             }
@@ -180,6 +268,81 @@ struct AppearanceSettingsView: View {
                 range: 8...24,
                 unit: "pt"
             )
+
+            Picker("appearance.comment_font".localized, selection: Binding(
+                get: { config.commentFontFace },
+                set: { config.commentFontFace = $0 }
+            )) {
+                ForEach(["PingFang SC", "PingFang HK", "Heiti SC", "SF Pro", "Menlo", "Lucida Grande"], id: \.self) {
+                    Text($0)
+                }
+            }
+
+            doubleSliderRow(
+                label: "appearance.comment_size".localized,
+                value: Binding(
+                    get: { config.commentFontPoint },
+                    set: { config.commentFontPoint = $0 }
+                ),
+                range: 8...24,
+                unit: "pt"
+            )
+        }
+    }
+
+    // MARK: - Spacing & Border Section
+
+    private var spacingSection: some View {
+        Section("appearance.section_spacing".localized) {
+            doubleSliderRow(
+                label: "appearance.line_spacing".localized,
+                value: schemeDoubleBinding(
+                    schemeKeyPath: \.schemeLineSpacing,
+                    configKeyPath: \.lineSpacing
+                ),
+                range: 0...20,
+                unit: ""
+            )
+
+            doubleSliderRow(
+                label: "appearance.spacing".localized,
+                value: schemeDoubleBinding(
+                    schemeKeyPath: \.schemeSpacing,
+                    configKeyPath: \.spacing
+                ),
+                range: 0...20,
+                unit: ""
+            )
+
+            doubleSliderRow(
+                label: "appearance.border_height".localized,
+                value: schemeDoubleBinding(
+                    schemeKeyPath: \.schemeBorderHeight,
+                    configKeyPath: \.borderHeight
+                ),
+                range: 0...20,
+                unit: ""
+            )
+
+            doubleSliderRow(
+                label: "appearance.border_width".localized,
+                value: schemeDoubleBinding(
+                    schemeKeyPath: \.schemeBorderWidth,
+                    configKeyPath: \.borderWidth
+                ),
+                range: 0...20,
+                unit: ""
+            )
+
+            doubleSliderRow(
+                label: "appearance.shadow_size".localized,
+                value: schemeDoubleBinding(
+                    schemeKeyPath: \.schemeShadowSize,
+                    configKeyPath: \.shadowSize
+                ),
+                range: 0...20,
+                unit: ""
+            )
         }
     }
 
@@ -189,18 +352,18 @@ struct AppearanceSettingsView: View {
         Section("appearance.section_effects".localized) {
             percentSliderRow(
                 label: "appearance.alpha".localized,
-                value: Binding(
-                    get: { config.alpha },
-                    set: { config.alpha = $0 }
+                value: schemeDoubleBinding(
+                    schemeKeyPath: \.schemeAlpha,
+                    configKeyPath: \.alpha
                 ),
                 range: 0.3...1.0
             )
 
             doubleSliderRow(
                 label: "appearance.corner_radius".localized,
-                value: Binding(
-                    get: { config.cornerRadius },
-                    set: { config.cornerRadius = $0 }
+                value: schemeDoubleBinding(
+                    schemeKeyPath: \.schemeCornerRadius,
+                    configKeyPath: \.cornerRadius
                 ),
                 range: 0...20,
                 unit: ""
@@ -208,17 +371,17 @@ struct AppearanceSettingsView: View {
 
             doubleSliderRow(
                 label: "appearance.hilited_radius".localized,
-                value: Binding(
-                    get: { config.hilitedCornerRadius },
-                    set: { config.hilitedCornerRadius = $0 }
+                value: schemeDoubleBinding(
+                    schemeKeyPath: \.schemeHilitedCornerRadius,
+                    configKeyPath: \.hilitedCornerRadius
                 ),
                 range: 0...20,
                 unit: ""
             )
 
-            Toggle("appearance.translucency".localized, isOn: Binding(
-                get: { config.translucency },
-                set: { config.translucency = $0 }
+            Toggle("appearance.translucency".localized, isOn: schemeBoolBinding(
+                schemeKeyPath: \.schemeTranslucency,
+                configKeyPath: \.translucency
             ))
 
             Toggle("appearance.blur".localized, isOn: Binding(
@@ -381,7 +544,7 @@ struct SchemeColorPickerRow: View {
             ColorPicker("", selection: Binding(
                 get: { swatch },
                 set: { hex = ColorScheme.colorToRimeHex($0) }
-            ))
+            ), supportsOpacity: true)
             .labelsHidden()
         }
     }

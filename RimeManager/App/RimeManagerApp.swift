@@ -20,7 +20,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             guard let window = NSApp.windows.first else { return }
             window.titlebarAppearsTransparent = true
-            window.styleMask.insert(.fullSizeContentView)
             window.backgroundColor = .clear
             window.isOpaque = false
             window.hasShadow = true
@@ -34,13 +33,12 @@ struct RimeManagerApp: App {
     @StateObject private var appState = AppState()
 
     var body: some Scene {
-        WindowGroup {
+        WindowGroup(id: "main_v6") {
             ContentView()
                 .environmentObject(appState)
-                .frame(minWidth: 960, minHeight: 640)
+                .frame(minWidth: 750, minHeight: 500)
         }
-        .defaultSize(width: 1080, height: 720)
-        .windowResizability(.contentMinSize)
+        .defaultSize(width: 960, height: 680)
         .commands {
             CommandGroup(replacing: .appInfo) {
                 Button("About Rime Manager") {

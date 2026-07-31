@@ -26,8 +26,8 @@ final class SquirrelConfig: ObservableObject {
     @Published var hilitedCornerRadius: Double = 6
     @Published var borderHeight: Double = 0
     @Published var borderWidth: Double = 0
-    @Published var lineSpacing: Double = 2
-    @Published var spacing: Double = 6
+    @Published var lineSpacing: Double = 5
+    @Published var spacing: Double = 10
     @Published var shadowSize: Double = 8
 
     // MARK: - Typography
@@ -44,6 +44,11 @@ final class SquirrelConfig: ObservableObject {
     @Published var colorSchemeLightName: String = "mint_light_blue"
     @Published var colorSchemeDarkName: String = "mint_dark_blue"
     @Published var colorSchemes: [String: EditableColorScheme] = [:]
+
+    // MARK: - Top-level settings
+
+    @Published var showNotificationsWhen: ShowNotificationsWhen = .appropriate
+    @Published var appOptions: [AppOptionEntry] = []
 
     // MARK: - Raw YAML reference
 
@@ -118,6 +123,16 @@ final class SquirrelConfig: ObservableObject {
         if let menu = menu {
             pageSize = menu["page_size"] as? Int ?? 9
         }
+
+        // Top-level: show_notifications_when (inside patch)
+        let notifRaw = customPatch["show_notifications_when"] as? String
+            ?? baseDict["show_notifications_when"] as? String
+        showNotificationsWhen = ShowNotificationsWhen(rawValue: notifRaw ?? "") ?? .appropriate
+
+        // Top-level: app_options
+        let appOpts = customPatch["app_options"] as? [String: Any]
+            ?? baseDict["app_options"] as? [String: Any]
+        appOptions = Self.parseAppOptions(appOpts)
     }
 
     private func applyStyle(_ style: [String: Any]) {
@@ -132,22 +147,29 @@ final class SquirrelConfig: ObservableObject {
         statusMessageType = parseStatusType(style["status_message_type"])
         translucency = style["translucency"] as? Bool ?? true
         blurEnabled = style["blur"] as? Bool ?? true
-        alpha = style["alpha"] as? Double ?? 0.84
-        cornerRadius = style["corner_radius"] as? Double ?? 8
-        hilitedCornerRadius = style["hilited_corner_radius"] as? Double ?? 6
-        borderHeight = style["border_height"] as? Double ?? 0
-        borderWidth = style["border_width"] as? Double ?? 0
-        lineSpacing = style["line_spacing"] as? Double ?? 2
-        spacing = style["spacing"] as? Double ?? 6
-        shadowSize = style["shadow_size"] as? Double ?? 8
+        alpha = doubleVal(style["alpha"]) ?? 0.84
+        cornerRadius = doubleVal(style["corner_radius"]) ?? 8
+        hilitedCornerRadius = doubleVal(style["hilited_corner_radius"]) ?? 6
+        borderHeight = doubleVal(style["border_height"]) ?? 0
+        borderWidth = doubleVal(style["border_width"]) ?? 0
+        lineSpacing = doubleVal(style["line_spacing"]) ?? 5
+        spacing = doubleVal(style["spacing"]) ?? 10
+        shadowSize = doubleVal(style["shadow_size"]) ?? 8
         fontFace = style["font_face"] as? String ?? "PingFangSC"
-        fontPoint = style["font_point"] as? Double ?? 18
+        fontPoint = doubleVal(style["font_point"]) ?? 18
         labelFontFace = style["label_font_face"] as? String ?? "PingFangSC"
-        labelFontPoint = style["label_font_point"] as? Double ?? 14
+        labelFontPoint = doubleVal(style["label_font_point"]) ?? 14
         commentFontFace = style["comment_font_face"] as? String ?? "PingFangSC"
-        commentFontPoint = style["comment_font_point"] as? Double ?? 13
+        commentFontPoint = doubleVal(style["comment_font_point"]) ?? 13
         colorSchemeLightName = style["color_scheme"] as? String ?? ""
         colorSchemeDarkName = style["color_scheme_dark"] as? String ?? ""
+    }
+
+    /// Safely extract a Double from a YAML value (handles both Int and Double).
+    private func doubleVal(_ value: Any?) -> Double? {
+        if let d = value as? Double { return d }
+        if let i = value as? Int { return Double(i) }
+        return nil
     }
 
     private func applyColorSchemes(_ schemes: [String: Any]) {
@@ -194,7 +216,7 @@ final class SquirrelConfig: ObservableObject {
         ]
 
         // Preserve original custom YAML structure, only updating style + app_options.
-        // NEVER write back preset_color_schemes — they belong in squirrel.yaml (base).
+        // Include modified preset_color_schemes in the patch.
         var result: [String: Any]
         if customFileExists, var patch = originalCustomDict["patch"] as? [String: Any] {
             // Update style
@@ -204,19 +226,36 @@ final class SquirrelConfig: ObservableObject {
             } else {
                 patch["style"] = styleBlock
             }
-            // Always include browser inline fix
-            patch["app_options"] = Self.defaultAppOptions
+            // App options: merge user entries with browser defaults
+            var mergedAppOpts = Self.defaultAppOptions
+            for (k, v) in appOptionsDict() { mergedAppOpts[k] = v }
+            patch["app_options"] = mergedAppOpts
             // Preserve menu if set
             if pageSize != 9 { patch["menu"] = ["page_size": pageSize] }
-            // Remove any preset_color_schemes that may have leaked in
-            patch = patch.filter { !$0.key.hasPrefix("preset_color_schemes") }
+            // Notification setting
+            patch["show_notifications_when"] = showNotificationsWhen.rawValue
+            // Include modified color schemes in patch
+            let modifiedSchemes = modifiedColorSchemesDict()
+            if !modifiedSchemes.isEmpty {
+                patch["preset_color_schemes"] = modifiedSchemes
+            } else {
+                patch.removeValue(forKey: "preset_color_schemes")
+            }
             result = ["patch": patch]
         } else {
             var patch: [String: Any] = [
                 "style": styleBlock,
-                "app_options": Self.defaultAppOptions,
+                "show_notifications_when": showNotificationsWhen.rawValue,
             ]
+            var mergedAppOpts = Self.defaultAppOptions
+            for (k, v) in appOptionsDict() { mergedAppOpts[k] = v }
+            patch["app_options"] = mergedAppOpts
             if pageSize != 9 { patch["menu"] = ["page_size": pageSize] }
+            // Include modified color schemes
+            let modifiedSchemes = modifiedColorSchemesDict()
+            if !modifiedSchemes.isEmpty {
+                patch["preset_color_schemes"] = modifiedSchemes
+            }
             result = ["patch": patch]
         }
 
@@ -231,6 +270,41 @@ final class SquirrelConfig: ObservableObject {
         "com.google.Chrome": ["no_inline": false],
         "com.microsoft.edgemac": ["no_inline": false],
     ]
+
+    static func parseAppOptions(_ dict: [String: Any]?) -> [AppOptionEntry] {
+        guard let dict = dict else { return [] }
+        return dict.compactMap { bundleID, value in
+            guard let opts = value as? [String: Any] else { return nil }
+            return AppOptionEntry(
+                bundleID: bundleID,
+                noInline: opts["no_inline"] as? Bool,
+                asciiMode: opts["ascii_mode"] as? Bool,
+                vimMode: opts["vim_mode"] as? Bool
+            )
+        }
+        .sorted { $0.bundleID < $1.bundleID }
+    }
+
+    func appOptionsDict() -> [String: Any] {
+        var result: [String: Any] = [:]
+        for entry in appOptions {
+            var opts: [String: Any] = [:]
+            if let v = entry.noInline { opts["no_inline"] = v }
+            if let v = entry.asciiMode { opts["ascii_mode"] = v }
+            if let v = entry.vimMode { opts["vim_mode"] = v }
+            if !opts.isEmpty { result[entry.bundleID] = opts }
+        }
+        return result
+    }
+
+    /// Returns a dict of color schemes that have been modified (for writing to patch).
+    func modifiedColorSchemesDict() -> [String: Any] {
+        var result: [String: Any] = [:]
+        for (name, scheme) in colorSchemes {
+            result[name] = scheme.toDict()
+        }
+        return result
+    }
 
     var effectiveLightScheme: EditableColorScheme? {
         colorSchemes[colorSchemeLightName]
@@ -280,12 +354,14 @@ enum TextOrientation: String, CaseIterable {
 enum CandidateLayout: String, CaseIterable {
     case linear = "linear"
     case stacked = "stacked"
+    case tabled = "tabled"
 
     var yamlValue: String { rawValue }
     var displayName: String {
         switch self {
         case .linear: return "Linear (线性)"
         case .stacked: return "Stacked (堆叠)"
+        case .tabled: return "Tabled (表格)"
         }
     }
 }
@@ -306,6 +382,8 @@ final class EditableColorScheme: ObservableObject, Identifiable {
     let id = UUID()
     let name: String
 
+    // MARK: - Colors
+
     @Published var backColor: String = "0xF2F2F7"
     @Published var hilitedCandidateBackColor: String = "0xFFFF840A"
     @Published var labelColor: String = "0x8E8E93"
@@ -318,6 +396,19 @@ final class EditableColorScheme: ObservableObject, Identifiable {
     @Published var hilitedTextColor: String = "0xFF840A"
     @Published var borderColor: String = "0x7C7C8040"
     @Published var shadowColor: String = "0x20000000"
+
+    // MARK: - Scheme-level style overrides (optional, override global style)
+
+    @Published var schemeAlpha: Double?
+    @Published var schemeTranslucency: Bool?
+    @Published var schemeMutualExclusive: Bool?
+    @Published var schemeShadowSize: Double?
+    @Published var schemeCornerRadius: Double?
+    @Published var schemeHilitedCornerRadius: Double?
+    @Published var schemeLineSpacing: Double?
+    @Published var schemeSpacing: Double?
+    @Published var schemeBorderHeight: Double?
+    @Published var schemeBorderWidth: Double?
 
     init(name: String) {
         self.name = name
@@ -337,10 +428,29 @@ final class EditableColorScheme: ObservableObject, Identifiable {
         hilitedTextColor = stringValue(dict["hilited_text_color"]) ?? "0xFF840A"
         borderColor = stringValue(dict["border_color"]) ?? "0x7C7C8040"
         shadowColor = stringValue(dict["shadow_color"]) ?? "0x20000000"
+
+        // Parse scheme-level style overrides
+        schemeAlpha = doubleVal(dict["alpha"])
+        schemeTranslucency = dict["translucency"] as? Bool
+        schemeMutualExclusive = dict["mutual_exclusive"] as? Bool
+        schemeShadowSize = doubleVal(dict["shadow_size"])
+        schemeCornerRadius = doubleVal(dict["corner_radius"])
+        schemeHilitedCornerRadius = doubleVal(dict["hilited_corner_radius"])
+        schemeLineSpacing = doubleVal(dict["line_spacing"])
+        schemeSpacing = doubleVal(dict["spacing"])
+        schemeBorderHeight = doubleVal(dict["border_height"])
+        schemeBorderWidth = doubleVal(dict["border_width"])
+    }
+
+    /// Safely extract a Double from a YAML value (handles both Int and Double).
+    private func doubleVal(_ value: Any?) -> Double? {
+        if let d = value as? Double { return d }
+        if let i = value as? Int { return Double(i) }
+        return nil
     }
 
     func toDict() -> [String: Any] {
-        [
+        var dict: [String: Any] = [
             "back_color": backColor,
             "hilited_candidate_back_color": hilitedCandidateBackColor,
             "label_color": labelColor,
@@ -354,6 +464,26 @@ final class EditableColorScheme: ObservableObject, Identifiable {
             "border_color": borderColor,
             "shadow_color": shadowColor,
         ]
+        // Include scheme-level style overrides
+        if let v = schemeAlpha { dict["alpha"] = v }
+        if let v = schemeTranslucency { dict["translucency"] = v }
+        if let v = schemeMutualExclusive { dict["mutual_exclusive"] = v }
+        if let v = schemeShadowSize { dict["shadow_size"] = Int(v) }
+        if let v = schemeCornerRadius { dict["corner_radius"] = Int(v) }
+        if let v = schemeHilitedCornerRadius { dict["hilited_corner_radius"] = Int(v) }
+        if let v = schemeLineSpacing { dict["line_spacing"] = Int(v) }
+        if let v = schemeSpacing { dict["spacing"] = Int(v) }
+        if let v = schemeBorderHeight { dict["border_height"] = Int(v) }
+        if let v = schemeBorderWidth { dict["border_width"] = Int(v) }
+        return dict
+    }
+
+    /// Whether this scheme has any style-level overrides (beyond colors).
+    var hasStyleOverrides: Bool {
+        schemeAlpha != nil || schemeTranslucency != nil || schemeMutualExclusive != nil
+            || schemeShadowSize != nil || schemeCornerRadius != nil
+            || schemeHilitedCornerRadius != nil || schemeLineSpacing != nil
+            || schemeSpacing != nil || schemeBorderHeight != nil || schemeBorderWidth != nil
     }
 
     var parsedBackColor: Color { ColorScheme.parseHexColor(backColor) ?? .white }
@@ -382,4 +512,30 @@ final class EditableColorScheme: ObservableObject, Identifiable {
         }
         return nil
     }
+}
+
+// MARK: - Notification Setting
+
+enum ShowNotificationsWhen: String, CaseIterable {
+    case always = "always"
+    case never = "never"
+    case appropriate = "appropriate"
+
+    var displayName: String {
+        switch self {
+        case .always: return "Always"
+        case .never: return "Never"
+        case .appropriate: return "Appropriate"
+        }
+    }
+}
+
+// MARK: - App Option Entry
+
+struct AppOptionEntry: Identifiable {
+    let id = UUID()
+    var bundleID: String
+    var noInline: Bool?
+    var asciiMode: Bool?
+    var vimMode: Bool?
 }

@@ -7,7 +7,6 @@ enum SidebarItem: String, CaseIterable, Identifiable {
     case schemas
     case dicts
     case backups
-    case files
 
     var id: String { rawValue }
 
@@ -18,7 +17,6 @@ enum SidebarItem: String, CaseIterable, Identifiable {
         case .schemas: return "nav.schemas".localized
         case .dicts: return "nav.dicts".localized
         case .backups: return "nav.backups".localized
-        case .files: return "nav.files".localized
         }
     }
 
@@ -29,14 +27,13 @@ enum SidebarItem: String, CaseIterable, Identifiable {
         case .schemas: return "list.bullet.rectangle"
         case .dicts: return "books.vertical"
         case .backups: return "externaldrive"
-        case .files: return "folder"
         }
     }
 
     var section: SidebarSection {
         switch self {
         case .appearance, .input, .schemas, .dicts: return .config
-        case .backups, .files: return .manage
+        case .backups: return .manage
         }
     }
 }
@@ -68,7 +65,8 @@ struct MainView: View {
             detailView
                 .background(.regularMaterial)
         }
-        .navigationSplitViewStyle(.balanced)
+        .navigationSplitViewStyle(.automatic)
+        .toolbar(removing: .sidebarToggle)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button(action: {
@@ -78,6 +76,18 @@ struct MainView: View {
                     Label("toolbar.apply_deploy".localized, systemImage: "checkmark.icloud")
                 }
                 .disabled(appState.rimeDirectoryURL == nil)
+            }
+            ToolbarItem(placement: .primaryAction) {
+                Button(action: {
+                    if let url = appState.rimeDirectoryURL {
+                        NSWorkspace.shared.open(url)
+                    } else {
+                        appState.selectRimeDirectory()
+                    }
+                }) {
+                    Image(systemName: "folder")
+                }
+                .help("toolbar.open_config_dir".localized)
             }
             ToolbarItem(placement: .automatic) {
                 Menu {
@@ -136,49 +146,28 @@ struct MainView: View {
             }
         }
         .listStyle(.sidebar)
-        .scrollContentBackground(.hidden)
-        .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 260)
-        .safeAreaInset(edge: .bottom) {
+        .navigationSplitViewColumnWidth(min: 160, ideal: 180, max: 220)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
             sidebarFooter
         }
     }
 
     private var sidebarFooter: some View {
-        VStack(spacing: 8) {
-            Divider()
-            HStack {
-                // Language picker
-                Picker("", selection: Binding(
-                    get: { locale.currentLocale },
-                    set: { locale.currentLocale = $0 }
-                )) {
-                    ForEach(LocaleManager.AppLocale.allCases, id: \.self) {
-                        Text($0.displayName).tag($0)
-                    }
-                }
-                .pickerStyle(.menu)
-                .labelsHidden()
-                .frame(width: 100)
-
-                Spacer()
-
-                // Directory status
-                if let url = appState.rimeDirectoryURL {
-                    Text(url.lastPathComponent)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                } else {
-                    Button(action: { appState.selectRimeDirectory() }) {
-                        Image(systemName: "folder.badge.plus")
-                    }
-                    .buttonStyle(.borderless)
-                    .help("dialog.select_dir_title".localized)
+        HStack {
+            Picker("", selection: Binding(
+                get: { locale.currentLocale },
+                set: { locale.currentLocale = $0 }
+            )) {
+                ForEach(LocaleManager.AppLocale.allCases, id: \.self) {
+                    Text($0.displayName).tag($0)
                 }
             }
-            .padding(.horizontal, 12)
-            .padding(.bottom, 8)
+            .pickerStyle(.menu)
+            .labelsHidden()
+            Spacer()
         }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
     }
 
     // MARK: - Detail
@@ -196,8 +185,6 @@ struct MainView: View {
             DictListView()
         case .backups:
             BackupListView()
-        case .files:
-            FileEditorView()
         case nil:
             ContentUnavailableView(
                 "nav.appearance".localized,

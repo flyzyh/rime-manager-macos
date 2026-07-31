@@ -184,6 +184,7 @@ final class LocaleManager: ObservableObject, @unchecked Sendable {
 
         // Toolbar
         "toolbar.apply_deploy": ["en": "Apply & Deploy", "zh-Hans": "应用并部署", "zh-Hant": "應用並部署"],
+        "toolbar.open_config_dir": ["en": "Open Config Directory", "zh-Hans": "打开配置目录", "zh-Hant": "開啟設定目錄"],
         "toolbar.more": ["en": "More", "zh-Hans": "更多", "zh-Hant": "更多"],
 
         // Appearance settings
@@ -283,6 +284,47 @@ final class LocaleManager: ObservableObject, @unchecked Sendable {
         "files.toggle_preview": ["en": "Toggle Preview", "zh-Hans": "切换预览", "zh-Hant": "切換預覽"],
         "files.no_selection": ["en": "No File Selected", "zh-Hans": "未选择文件", "zh-Hant": "未選擇檔案"],
         "files.no_selection_desc": ["en": "Select a file from the sidebar to edit", "zh-Hans": "从侧边栏选择文件进行编辑", "zh-Hant": "從側邊欄選擇檔案進行編輯"],
+
+        // Appearance - new layout options
+        "appearance.candidate_layout": ["en": "Candidate Layout", "zh-Hans": "候选排列", "zh-Hant": "候選排列"],
+        "appearance.layout_linear": ["en": "Linear", "zh-Hans": "线性", "zh-Hant": "線性"],
+        "appearance.layout_stacked": ["en": "Stacked", "zh-Hans": "堆叠", "zh-Hant": "堆疊"],
+        "appearance.layout_tabled": ["en": "Tabled", "zh-Hans": "表格", "zh-Hant": "表格"],
+        "appearance.inline_candidate": ["en": "Inline Candidate", "zh-Hans": "内嵌候选", "zh-Hant": "內嵌候選"],
+        "appearance.mutual_exclusive": ["en": "Color Exclusive", "zh-Hans": "颜色不叠加", "zh-Hant": "顏色不疊加"],
+        "appearance.remember_size": ["en": "Remember Panel Size", "zh-Hans": "记住面板尺寸", "zh-Hant": "記住面板尺寸"],
+        "appearance.candidate_format": ["en": "Candidate Format", "zh-Hans": "候选格式", "zh-Hant": "候選格式"],
+        "appearance.status_message": ["en": "Status Message", "zh-Hans": "状态通知样式", "zh-Hant": "狀態通知樣式"],
+        "appearance.comment_font": ["en": "Comment Font", "zh-Hans": "注释字体", "zh-Hant": "註釋字體"],
+        "appearance.comment_size": ["en": "Comment Size", "zh-Hans": "注释字号", "zh-Hant": "註釋字號"],
+
+        // Appearance - spacing & border
+        "appearance.section_spacing": ["en": "Spacing & Border", "zh-Hans": "间距与边框", "zh-Hant": "間距與邊框"],
+        "appearance.line_spacing": ["en": "Line Spacing", "zh-Hans": "行间距", "zh-Hant": "行間距"],
+        "appearance.spacing": ["en": "Preedit Spacing", "zh-Hans": "预编辑间距", "zh-Hant": "預編輯間距"],
+        "appearance.border_height": ["en": "Border Height", "zh-Hans": "边框高度", "zh-Hant": "邊框高度"],
+        "appearance.border_width": ["en": "Border Width", "zh-Hans": "边框宽度", "zh-Hant": "邊框寬度"],
+        "appearance.shadow_size": ["en": "Shadow Size", "zh-Hans": "阴影大小", "zh-Hant": "陰影大小"],
+
+        // Input - engine
+        "input.section_engine": ["en": "Input Engine", "zh-Hans": "输入引擎", "zh-Hant": "輸入引擎"],
+        "input.enable_encoder": ["en": "Auto Word Creation", "zh-Hans": "自动造词", "zh-Hant": "自動造詞"],
+        "input.enable_sentence": ["en": "Sentence Input", "zh-Hans": "整句输入", "zh-Hant": "整句輸入"],
+        "input.enable_user_dict": ["en": "User Dictionary", "zh-Hans": "用户词典", "zh-Hant": "用戶詞典"],
+        "input.encode_commit_history": ["en": "Encode Commit History", "zh-Hans": "自动编码历史", "zh-Hant": "自動編碼歷史"],
+        "input.ascii_punct": ["en": "Western Punctuation", "zh-Hans": "西文标点", "zh-Hant": "西文標點"],
+
+        // Input - notifications
+        "input.section_notifications": ["en": "Notifications", "zh-Hans": "通知", "zh-Hant": "通知"],
+        "input.show_notifications": ["en": "Show Notifications", "zh-Hans": "显示通知", "zh-Hant": "顯示通知"],
+        "input.notif_always": ["en": "Always", "zh-Hans": "始终", "zh-Hant": "始終"],
+        "input.notif_appropriate": ["en": "Appropriate", "zh-Hans": "适时", "zh-Hant": "適時"],
+        "input.notif_never": ["en": "Never", "zh-Hans": "从不", "zh-Hant": "從不"],
+
+        // Input - app options
+        "input.section_app_options": ["en": "App-Specific Rules", "zh-Hans": "应用专属规则", "zh-Hant": "應用專屬規則"],
+        "input.add_app_rule": ["en": "Add Rule", "zh-Hans": "添加规则", "zh-Hant": "添加規則"],
+        "input.app_options_footer": ["en": "Configure input behavior per application. Browser rules (Safari/Chrome/Edge) are always included.", "zh-Hans": "按应用配置输入行为。浏览器规则（Safari/Chrome/Edge）始终包含。", "zh-Hant": "按應用配置輸入行為。瀏覽器規則（Safari/Chrome/Edge）始終包含。"],
     ]
 }
 

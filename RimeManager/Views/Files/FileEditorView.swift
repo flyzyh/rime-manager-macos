@@ -4,22 +4,22 @@ import SwiftUI
 /// Reuses existing SidebarView, EditorView, and PreviewPanelView components.
 struct FileEditorView: View {
     @EnvironmentObject private var appState: AppState
-    @State private var showPreview = true
+    @State private var showPreview = false
 
     var body: some View {
         HSplitView {
             // Left: File tree
             SidebarView()
-                .frame(minWidth: 200, idealWidth: 260, maxWidth: 350)
+                .frame(minWidth: 150, idealWidth: 200, maxWidth: 280)
 
             // Center: Editor
             editorPane
-                .frame(minWidth: 300)
+                .frame(minWidth: 200)
 
             // Right: Preview (toggleable)
             if showPreview {
                 PreviewPanelView()
-                    .frame(minWidth: 240, idealWidth: 300, maxWidth: 450)
+                    .frame(minWidth: 180, idealWidth: 250, maxWidth: 350)
             }
         }
         .navigationTitle("nav.files".localized)
