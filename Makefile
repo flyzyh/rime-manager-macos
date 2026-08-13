@@ -11,8 +11,8 @@ test:
 	swift test
 
 icon:
-	@swift scripts/gen_icon.swift
-	@bash scripts/make_icon.sh
+	@echo "Using official Rime icon (scripts/AppIcon.icns)"
+	@test -f scripts/AppIcon.icns || (echo "ERROR: icon missing" && exit 1)
 
 app: build
 	rm -rf "$(APP_DIR)"
