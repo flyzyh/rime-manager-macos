@@ -116,6 +116,9 @@ struct BackupListView: View {
             appState.importExport.restoreBackup(url, to: appState.rimeDirectoryURL)
             appState.reloadFiles()
             appState.configManager.loadAllConfigs(in: appState.rimeDirectoryURL)
+            // 恢复后必须重新部署：Squirrel 缓存了 build/ 目录的编译产物，
+            // 仅复制 YAML 文件不会生效
+            appState.deployRime()
         }
     }
 
