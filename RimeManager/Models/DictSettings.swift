@@ -5,15 +5,46 @@ import Yams
 final class DictSettings: ObservableObject {
     @Published var importTables: [DictEntry] = []
     @Published var schemaName: String = ""
+    @Published var entryCounts: [String: Int] = [:]
 
     private var dictFileURL: URL?
     private var originalYAML: String = ""
+    private var rimeDirURL: URL?
 
     struct DictEntry: Identifiable {
         let id = UUID()
         let name: String
         var enabled: Bool
         let description: String
+    }
+
+    /// 统计各词库文件词条数
+    func scanEntryCounts(in rimeDir: URL) {
+        rimeDirURL = rimeDir
+        var counts: [String: Int] = [:]
+        let fm = FileManager.default
+
+        for entry in importTables {
+            let name = entry.name
+            // 路径如 dicts/rime_mint.base → dicts/rime_mint.base.dict.yaml
+            let relPath = name.hasSuffix(".dict.yaml") ? name : "\(name).dict.yaml"
+            let fileURL = rimeDir.appendingPathComponent(relPath)
+            guard fm.fileExists(atPath: fileURL.path),
+                  let content = try? String(contentsOf: fileURL, encoding: .utf8) else { continue }
+
+            var count = 0
+            for line in content.components(separatedBy: "\n") {
+                let t = line.trimmingCharacters(in: .whitespaces)
+                if t.isEmpty || t.hasPrefix("#") || t.hasPrefix("---") || t.hasPrefix("...") || t.hasPrefix("name:") || t.hasPrefix("version:") || t.hasPrefix("sort:") || t.hasPrefix("use_preset") || t.hasPrefix("import_tables") { continue }
+                if t.contains("\t") || t.contains(" ") { count += 1 }
+            }
+            counts[name] = count
+        }
+        entryCounts = counts
+    }
+
+    func entryCount(for name: String) -> Int {
+        entryCounts[name] ?? 0
     }
 
     /// Load from rime_mint.dict.yaml

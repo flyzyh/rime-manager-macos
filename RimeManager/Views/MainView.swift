@@ -4,8 +4,13 @@ import SwiftUI
 enum SidebarItem: String, CaseIterable, Identifiable {
     case appearance
     case input
-    case schemas
+    case punct
+    case keybind
+    case phrases
     case dicts
+    case lua
+    case advanced
+    case schemas
     case backups
 
     var id: String { rawValue }
@@ -14,8 +19,13 @@ enum SidebarItem: String, CaseIterable, Identifiable {
         switch self {
         case .appearance: return "nav.appearance".localized
         case .input: return "nav.input".localized
-        case .schemas: return "nav.schemas".localized
+        case .punct: return "nav.punct".localized
+        case .keybind: return "nav.keybind".localized
+        case .phrases: return "nav.phrases".localized
         case .dicts: return "nav.dicts".localized
+        case .lua: return "nav.lua".localized
+        case .advanced: return "nav.advanced".localized
+        case .schemas: return "nav.schemas".localized
         case .backups: return "nav.backups".localized
         }
     }
@@ -24,16 +34,21 @@ enum SidebarItem: String, CaseIterable, Identifiable {
         switch self {
         case .appearance: return "paintpalette"
         case .input: return "keyboard"
-        case .schemas: return "list.bullet.rectangle"
+        case .punct: return "textformat"
+        case .keybind: return "keyboard.badge.ellipsis"
+        case .phrases: return "text.badge.plus"
         case .dicts: return "books.vertical"
+        case .lua: return "chevron.left.forwardslash.chevron.right"
+        case .advanced: return "gearshape.2"
+        case .schemas: return "list.bullet.rectangle"
         case .backups: return "externaldrive"
         }
     }
 
     var section: SidebarSection {
         switch self {
-        case .appearance, .input, .schemas, .dicts: return .config
-        case .backups: return .manage
+        case .appearance, .input, .punct, .keybind, .phrases, .dicts, .lua, .advanced: return .config
+        case .schemas, .backups: return .manage
         }
     }
 }
@@ -139,8 +154,19 @@ struct MainView: View {
             ForEach(SidebarSection.allCases, id: \.self) { section in
                 Section(section.title) {
                     ForEach(SidebarItem.allCases.filter { $0.section == section }) { item in
-                        Label(item.title, systemImage: item.icon)
-                            .tag(item)
+                        HStack {
+                            Label(item.title, systemImage: item.icon)
+                            Spacer()
+                            if let badge = badge(for: item) {
+                                Text(badge)
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(.quaternary, in: Capsule())
+                            }
+                        }
+                        .tag(item)
                     }
                 }
             }
@@ -149,6 +175,26 @@ struct MainView: View {
         .navigationSplitViewColumnWidth(min: 160, ideal: 180, max: 220)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             sidebarFooter
+        }
+    }
+
+    /// 侧边栏数量徽章
+    private func badge(for item: SidebarItem) -> String? {
+        switch item {
+        case .dicts:
+            let count = appState.configManager.dictSettings.importTables.filter(\.enabled).count
+            return count > 0 ? "\(count)" : nil
+        case .phrases:
+            let count = appState.configManager.phraseSettings.phrases.count
+            return count > 0 ? "\(count)" : nil
+        case .schemas:
+            let count = appState.configManager.schemaSettings.enabledSchemaIDs.count
+            return count > 0 ? "\(count)" : nil
+        case .lua:
+            let count = appState.configManager.luaSettings.luaEntries.filter(\.enabled).count
+            return count > 0 ? "\(count)" : nil
+        default:
+            return nil
         }
     }
 
@@ -179,10 +225,20 @@ struct MainView: View {
             AppearanceSettingsView()
         case .input:
             InputSettingsView()
-        case .schemas:
-            SchemaListView()
+        case .punct:
+            PunctuatorEditorView()
+        case .keybind:
+            KeyBindingEditorView()
+        case .phrases:
+            PhraseListView()
         case .dicts:
             DictListView()
+        case .lua:
+            LuaManagerView()
+        case .advanced:
+            AdvancedSettingsView()
+        case .schemas:
+            SchemaListView()
         case .backups:
             BackupListView()
         case nil:

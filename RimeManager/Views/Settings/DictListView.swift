@@ -91,6 +91,14 @@ struct DictListView: View {
 
                     Spacer()
 
+                    // 词条数统计
+                    let count = dictSettings.entryCount(for: entry.name)
+                    if count > 0 {
+                        Text("\(count.formatted()) 词条")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    }
+
                     // Status indicator
                     Image(systemName: entry.enabled ? "checkmark.circle.fill" : "circle")
                         .foregroundStyle(entry.enabled ? Color.green : Color.gray.opacity(0.4))
