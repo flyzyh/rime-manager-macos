@@ -1,0 +1,65 @@
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.0.8",
+  "base_commit_sha": "ba3f277507dea11d56b21897f650024a5c575c49",
+  "prompts": {
+    "eb315b45fc683d3e": {
+      "agent_id": {
+        "tool": "qoder-cn",
+        "id": "task-5c83637690d445fea15a.session.execution",
+        "model": "unknown"
+      },
+      "human_author": "flyzyh <flyzyh@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 804,
+      "overriden_lines": 0
+    }
+  },
+  "commit_stats": {
+    "git_diff_added_lines": 56,
+    "git_diff_deleted_lines": 12,
+    "ai_additions": 0,
+    "ai_accepted": 0,
+    "BYMC": 54,
+    "mixed_additions": 0,
+    "BYAC": 0,
+    "BYRC": 0,
+    "per_file": {
+      "RimeManager/App/ConfigManager.swift": {
+        "BYMC": [
+          "25-26",
+          "97",
+          "102-108",
+          "166-172",
+          "200-203",
+          "220-221"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Models/AdvancedSettings.swift": {
+        "BYMC": [
+          "41-42",
+          "49",
+          "86-100"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Models/KeyBindingSettings.swift": {
+        "BYMC": [
+          "8-9",
+          "86-96"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      }
+    }
+  },
+  "ipa_account": "zhouyuhan",
+  "commit_timestamp": 1786603462,
+  "requirement_id": ""
+}
