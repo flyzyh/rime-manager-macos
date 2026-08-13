@@ -55,6 +55,8 @@ final class SquirrelConfig: ObservableObject {
     private var originalYAML: String = ""
     private var rawDict: [String: Any] = [:]
     private var originalCustomDict: [String: Any] = [:]
+    /// 加载时各配色方案的颜色快照，用于判断用户是否修改过（避免回写破坏原始配色）
+    private var schemeSnapshot: [String: [String: String]] = [:]
     var customFileExists: Bool = false
 
     func load(from yaml: String) {
@@ -113,6 +115,12 @@ final class SquirrelConfig: ObservableObject {
         // Apply merged settings
         applyStyle(mergedStyle)
         applyColorSchemes(mergedSchemes)
+
+        // 快照各方案的当前颜色值
+        schemeSnapshot = [:]
+        for (name, scheme) in colorSchemes {
+            schemeSnapshot[name] = scheme.hexDict()
+        }
 
         // Store for writing back
         originalYAML = customYAML.isEmpty ? baseYAML : customYAML
@@ -234,13 +242,16 @@ final class SquirrelConfig: ObservableObject {
             if pageSize != 9 { patch["menu"] = ["page_size": pageSize] }
             // Notification setting
             patch["show_notifications_when"] = showNotificationsWhen.rawValue
-            // Include modified color schemes in patch
+            // 仅回写用户修改过的配色方案，保留原始方案条目（含 alpha/spacing 等扩展字段）
             let modifiedSchemes = modifiedColorSchemesDict()
             if !modifiedSchemes.isEmpty {
-                patch["preset_color_schemes"] = modifiedSchemes
-            } else {
-                patch.removeValue(forKey: "preset_color_schemes")
+                var mergedSchemes = patch["preset_color_schemes"] as? [String: Any] ?? [:]
+                for (name, value) in modifiedSchemes {
+                    mergedSchemes[name] = value
+                }
+                patch["preset_color_schemes"] = mergedSchemes
             }
+            // 未修改时保留原始 custom 中的方案定义，不做删除
             result = ["patch": patch]
         } else {
             var patch: [String: Any] = [
@@ -301,6 +312,10 @@ final class SquirrelConfig: ObservableObject {
     func modifiedColorSchemesDict() -> [String: Any] {
         var result: [String: Any] = [:]
         for (name, scheme) in colorSchemes {
+            // 与加载时的快照比较，只写回用户改过的方案
+            if let snap = schemeSnapshot[name], snap == scheme.hexDict() {
+                continue // 未修改，跳过
+            }
             result[name] = scheme.toDict()
         }
         return result
@@ -447,6 +462,24 @@ final class EditableColorScheme: ObservableObject, Identifiable {
         if let d = value as? Double { return d }
         if let i = value as? Int { return Double(i) }
         return nil
+    }
+
+    /// 仅返回 12 个颜色字段的 hex 快照，用于变更检测
+    func hexDict() -> [String: String] {
+        [
+            "back_color": backColor,
+            "hilited_candidate_back_color": hilitedCandidateBackColor,
+            "label_color": labelColor,
+            "hilited_candidate_label_color": hilitedCandidateLabelColor,
+            "candidate_text_color": candidateTextColor,
+            "hilited_candidate_text_color": hilitedCandidateTextColor,
+            "comment_text_color": commentTextColor,
+            "hilited_comment_text_color": hilitedCommentTextColor,
+            "text_color": textColor,
+            "hilited_text_color": hilitedTextColor,
+            "border_color": borderColor,
+            "shadow_color": shadowColor,
+        ]
     }
 
     func toDict() -> [String: Any] {
