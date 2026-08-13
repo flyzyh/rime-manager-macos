@@ -6,6 +6,31 @@ A native macOS app for managing Rime input method configurations visually. Desig
 
 ---
 
+## 更新日志 Changelog
+
+### v1.3.1
+- 🔵 修复候选词数量配置层级错误（schema 层 page_size 需 patch 到 rime_mint.custom.yaml）
+- 🎨 恢复备份后自动重启输入法，外观配置真正生效
+- 🧊 新增「液态玻璃」配色方案（半透明背景 + Apple 蓝高亮 + 18px 圆角）
+- 🎯 修正 Squirrel 颜色字节序为 0xAABBGGRR（低位=Red，高位=Alpha）
+- 🛡️ 修复 9 个破坏性配置写入漏洞：部分列表覆盖 engine、translator 丢失 dictionary、installation.yaml 字段抹除等
+- 💾 部署改为完全重启 Squirrel（--reload 不重载面板外观）
+
+### v1.3.0
+- ✏️ 自定义短语编辑器（custom_phrase.txt 图形化管理）
+- 🔣 标点映射编辑器（半角/全角符号自定义）
+- ⌨️ 按键绑定可视化（四维编辑 + 60+ 预设键位）
+- 🧩 Lua 扩展开关（17 个脚本分组启停 + 反查开关）
+- ⚙️ 高级设置（同步、OpenCC 简繁链、方案切换快捷键、用户词库清空）
+- 📚 词库词条数统计 + 侧边栏数量徽章
+- 🎨 官方 Rime 图标（佛振/梁海/雨過之後 设计）
+
+### v1.2.0
+- macOS 设置风格界面（NavigationSplitView 侧边栏）
+- 按应用独立配置、Toast 反馈、液态玻璃窗口
+
+---
+
 ## 功能 Features
 
 ### 🎛️ 外观配置 Appearance
