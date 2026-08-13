@@ -1,0 +1,43 @@
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.0.8",
+  "base_commit_sha": "05dfa1ea794068cef0ba8ddca03e65a50dcdc65e",
+  "prompts": {
+    "eb315b45fc683d3e": {
+      "agent_id": {
+        "tool": "qoder-cn",
+        "id": "task-5c83637690d445fea15a.session.execution",
+        "model": "unknown"
+      },
+      "human_author": "flyzyh <flyzyh@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 1092,
+      "total_deletions": 441,
+      "accepted_lines": 816,
+      "overriden_lines": 0
+    }
+  },
+  "commit_stats": {
+    "git_diff_added_lines": 1,
+    "git_diff_deleted_lines": 2759,
+    "ai_additions": 0,
+    "ai_accepted": 0,
+    "BYMC": 1,
+    "mixed_additions": 0,
+    "BYAC": 0,
+    "BYRC": 0,
+    "per_file": {
+      ".gitignore": {
+        "BYMC": [
+          "77"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      }
+    }
+  },
+  "ipa_account": "zhouyuhan",
+  "commit_timestamp": 1786591142,
+  "requirement_id": ""
+}
