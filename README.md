@@ -17,7 +17,14 @@ A native macOS app for managing Rime input method configurations visually. Desig
 - 配色方案管理（亮色/暗色/自动跟随系统）
 - 8 种颜色独立取色器（背景、文字、高亮背景、候选字、序号、注释、边框、阴影）
 
-### 📝 输入方案管理 Schema
+### ⌨️ 输入行为 Input
+- 默认中英模式、简繁字形切换
+- Emoji 建议、全角、声调显示、中英标点开关
+- Caps Lock 行为、Shift 键行为
+- 编码器、整句、用户词库引擎选项
+- 按应用独立配置（浏览器强制 inline 修复回车问题）
+
+### 📝 输入方案管理 Schemas
 - 查看当前默认输入方案
 - 管理 Ctrl+` 轮换队列（启用/禁用方案）
 - 支持全拼、双拼、五笔、笔画等 15+ 方案
@@ -26,9 +33,34 @@ A native macOS app for managing Rime input method configurations visually. Desig
 ### 📚 词库管理 Dictionaries
 - 薄荷拼音内置词库开关（基础词库、扩展词库、颜文字等）
 - 雾凇拼音纠错词库
+- **词条数统计**（每个词库显示词条数量）
+
+### ✏️ 自定义短语 Phrases
+- 图形化管理 `custom_phrase.txt`
+- 添加 / 删除 / 搜索短语
+- 权重调节（影响候选排序）
+
+### 🔣 标点映射 Punctuation
+- 半角 / 全角符号映射编辑
+- 支持普通提交、多候选、成对括号三种格式
+
+### ⌨️ 按键绑定 Key Bindings
+- 可视化编辑键盘快捷键
+- 触发时机 / 按键 / 动作 / 目标四维配置
+- 60+ 预设键位下拉选择
+
+### 🧩 Lua 扩展开关 Lua Extensions
+- 17 个 Lua 脚本按处理器 / 翻译器 / 过滤器分组启停
+- 计算器、日期时间、农历、金额大小写、错音纠错等
+- 反查（部首 / 笔画 / 五笔）开关
+
+### ⚙️ 高级设置 Advanced
+- **同步配置**：installation_id、同步目录
+- **简繁转换（OpenCC）**：8 种转换链选择
+- **方案切换快捷键**自定义
+- **用户词库管理**：占用空间统计、一键清空
 
 ### 💾 备份管理 Backups
-- 自动备份（首次检测配置、每次写入前）
 - 手动创建备份
 - 备份恢复与删除
 - 所有备份保存在 `~/Library/Rime/backups/`
@@ -41,12 +73,8 @@ A native macOS app for managing Rime input method configurations visually. Desig
 - 浏览器回车键修复（强制 inline 模式，解决知乎等编辑器兼容问题）
 - 一键部署 Rime
 - 保存配置但不部署
-
----
-
-## 截图 Screenshots
-
-> <img width="2216" height="1608" alt="image" src="https://github.com/user-attachments/assets/bb9b2d63-2bab-4165-a86a-08cc7beb5fc2" />
+- Toast 反馈提示
+- 液态玻璃（Liquid Glass）界面
 
 ---
 
@@ -54,9 +82,7 @@ A native macOS app for managing Rime input method configurations visually. Desig
 
 - macOS 14.0 (Sonoma) 或更高版本
 - [Squirrel (鼠鬚管)](https://rime.im/download/) 输入法引擎
-- [薄荷拼音 oh-my-rime](https://github.com/Mintimate/oh-my-rime)（需提前安装）
-
-> ⚠️ **重要**：本软件不再内置薄荷拼音配置。请先按照 [oh-my-rime 指南](https://www.mintimate.cc/zh/guide/) 安装薄荷拼音方案，再使用本工具进行可视化管理。
+- [薄荷拼音 (oh-my-rime)](https://github.com/Mintimate/oh-my-rime)
 
 ---
 
@@ -66,26 +92,21 @@ A native macOS app for managing Rime input method configurations visually. Desig
 
 从 [Releases](https://github.com/flyzyh/rime-manager-macos/releases) 下载最新版 `RimeManager.app`。
 
-### 前置准备 Prerequisites
-
-1. 安装 [Squirrel (鼠鬚管)](https://rime.im/download/)
-2. 按照 [oh-my-rime 指南](https://www.mintimate.cc/zh/guide/) 下载并安装薄荷拼音方案到 `~/Library/Rime/`
-3. 部署 Rime（点击菜单栏输入法图标 → 部署）
-
 ### 首次启动 First Launch
 
 1. 双击 `RimeManager.app`
-2. 软件会自动检测 `~/Library/Rime/` 中的配置
-3. 若未检测到配置，会提示你先安装薄荷拼音
+2. 若系统无 Rime 配置，跟随引导安装 oh-my-rime
+3. 若已有配置，自动检测后进入主界面
 
 ### 日常使用 Daily Use
 
 | 操作 | 说明 |
 |------|------|
-| 修改外观 | Appearance 标签页调整后点击 **保存** 或 **应用并部署** |
-| 切换输入方案 | Schema 标签页启用/禁用，Ctrl+` 切换 |
-| 管理词库 | Dictionaries 标签页开关各词库 |
-| 恢复配置 | Backups 标签页选择备份点恢复 |
+| 修改配置 | 侧边栏选择分类，调整后点击工具栏 **应用并部署** |
+| 切换输入方案 | 输入方案页启用/禁用，Ctrl+` 切换 |
+| 管理词库 | 词库页开关各词库，查看词条数 |
+| 添加短语 | 短语页输入编码+短语+权重 |
+| 恢复配置 | 备份页选择备份点恢复 |
 
 ### 从源码构建 Build from Source
 

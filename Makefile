@@ -25,7 +25,7 @@ app: build
 	plutil -replace CFBundleDisplayName -string "Rime Manager" "$(APP_DIR)/Contents/Info.plist"
 	plutil -replace CFBundleIdentifier -string "com.rimemanager.app" "$(APP_DIR)/Contents/Info.plist"
 	plutil -replace CFBundleVersion -string "1" "$(APP_DIR)/Contents/Info.plist"
-	plutil -replace CFBundleShortVersionString -string "1.2.0" "$(APP_DIR)/Contents/Info.plist"
+	plutil -replace CFBundleShortVersionString -string "1.3.0" "$(APP_DIR)/Contents/Info.plist"
 	plutil -replace CFBundlePackageType -string "APPL" "$(APP_DIR)/Contents/Info.plist"
 	plutil -replace CFBundleExecutable -string "$(PROJECT)" "$(APP_DIR)/Contents/Info.plist"
 	plutil -replace LSMinimumSystemVersion -string "14.0" "$(APP_DIR)/Contents/Info.plist"
