@@ -220,6 +220,9 @@ final class ConfigManager: ObservableObject {
         // 以原始 rime_mint.custom.yaml 为基底，仅合并本程序管理的配置项
         var patch = originalSchemaCustomDict["patch"] as? [String: Any] ?? [:]
 
+        // 候选词数量：schema 层 page_size 必须 patch 到 schema custom，default.custom.yaml 不生效
+        patch["menu/page_size"] = inputSettings.candidateCount
+
         // Punctuator
         for (k, v) in punctuatorSettings.generatePatch() { patch[k] = v }
 
