@@ -5,6 +5,8 @@ import Yams
 @MainActor
 final class KeyBindingSettings: ObservableObject {
     @Published var bindings: [KeyBinding] = []
+    /// 加载时的绑定快照，用于判断用户是否修改过（未修改则不回写，避免冗余覆盖）
+    private var originalBindingsDict: [[String: Any]] = []
 
     struct KeyBinding: Identifiable {
         let id = UUID()
@@ -80,5 +82,17 @@ final class KeyBindingSettings: ObservableObject {
             dict[b.action] = b.target
             return dict
         }
+    }
+
+    /// 用户是否修改过绑定（与加载时快照比较）
+    var hasChanges: Bool {
+        NSDictionary(dictionary: ["bindings": generateBindings()]).isEqual(
+            to: ["bindings": originalBindingsDict]
+        ) == false
+    }
+
+    /// 记录快照（在 load 完成后调用）
+    func snapshot() {
+        originalBindingsDict = generateBindings()
     }
 }

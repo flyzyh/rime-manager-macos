@@ -22,6 +22,8 @@ final class ConfigManager: ObservableObject {
     private let fileService: FileManaging
     private let pathService: PathDetecting
     private var cancellables = Set<AnyCancellable>()
+    /// 加载时的 rime_mint.custom.yaml 原始内容（回写时保留用户其他自定义）
+    private var originalSchemaCustomDict: [String: Any] = [:]
 
     init(fileService: FileManaging = FileManagerService(),
          pathService: PathDetecting = RimePathService()) {
@@ -92,9 +94,18 @@ final class ConfigManager: ObservableObject {
 
         // 按键绑定
         keyBindingSettings.load(schemaYAML: schemaYAML, defaultYAML: defaultYAML)
+        keyBindingSettings.snapshot()
 
         // Lua 扩展
         luaSettings.load(schemaYAML: schemaYAML)
+
+        // 保存 rime_mint.custom.yaml 原始内容
+        let schemaCustomURL = url.appendingPathComponent("rime_mint.custom.yaml")
+        originalSchemaCustomDict = [:]
+        if fileService.fileExists(at: schemaCustomURL) {
+            let content = fileService.readFileContent(at: schemaCustomURL)
+            originalSchemaCustomDict = (try? Yams.load(yaml: content) as? [String: Any]) ?? [:]
+        }
 
         // 高级设置（同步/简繁/快捷键/用户词库）
         let installationURL = url.appendingPathComponent("installation.yaml")
@@ -152,11 +163,13 @@ final class ConfigManager: ObservableObject {
 
         // 5. Save schema custom patch (punctuator + lua engine)
         let schemaCustomURL = dirURL.appendingPathComponent("rime_mint.custom.yaml")
-        do {
-            let schemaPatchYAML = buildSchemaCustomYAML()
-            try fileService.writeFileContent(schemaPatchYAML, to: schemaCustomURL, shouldBackup: shouldBackup)
-        } catch {
-            throw AppError.fileWriteFailed(schemaCustomURL, error.localizedDescription)
+        let schemaPatchYAML = buildSchemaCustomYAML()
+        if !schemaPatchYAML.isEmpty {
+            do {
+                try fileService.writeFileContent(schemaPatchYAML, to: schemaCustomURL, shouldBackup: shouldBackup)
+            } catch {
+                throw AppError.fileWriteFailed(schemaCustomURL, error.localizedDescription)
+            }
         }
 
         // 6. Save installation.yaml (sync settings)
@@ -184,8 +197,10 @@ final class ConfigManager: ObservableObject {
         let schemaPatch = schemaSettings.schemaListPatch()
         for (k, v) in schemaPatch { patch[k] = v }
 
-        // Key bindings (覆盖 input 里的 key_binder)
-        patch["key_binder"] = ["bindings": keyBindingSettings.generateBindings()]
+        // 按键绑定：仅当用户修改过才整体回写；否则保留 InputSettings 的 key_binder/bindings/+ 追加项
+        if keyBindingSettings.hasChanges {
+            patch["key_binder"] = ["bindings": keyBindingSettings.generateBindings()]
+        }
 
         // Advanced (switcher hotkeys + simplifier filters)
         let advPatch = advancedSettings.generateDefaultPatch()
@@ -202,7 +217,8 @@ final class ConfigManager: ObservableObject {
     }
 
     private func buildSchemaCustomYAML() -> String {
-        var patch: [String: Any] = [:]
+        // 以原始 rime_mint.custom.yaml 为基底，仅合并本程序管理的配置项
+        var patch = originalSchemaCustomDict["patch"] as? [String: Any] ?? [:]
 
         // Punctuator
         for (k, v) in punctuatorSettings.generatePatch() { patch[k] = v }

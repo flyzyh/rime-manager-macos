@@ -38,12 +38,15 @@ final class AdvancedSettings: ObservableObject {
     private var rawDefaultDict: [String: Any] = [:]
     /// 加载时的完整 filters 列表，用于安全重建（避免覆盖掉 lua_filter 等条目）
     private var originalFilters: [String] = []
+    /// 加载时的完整 installation.yaml，回写时保留 Rime 自身的字段
+    private var originalInstallationDict: [String: Any] = [:]
 
     // MARK: - Load
 
     func load(installationYAML: String, defaultYAML: String, schemaYAML: String) {
         // installation.yaml
         if let d = try? Yams.load(yaml: installationYAML) as? [String: Any] {
+            originalInstallationDict = d
             installationID = d["installation_id"] as? String ?? ""
             syncDir = d["sync_dir"] as? String ?? ""
             distributionName = d["distribution_name"] as? String ?? ""
@@ -80,10 +83,21 @@ final class AdvancedSettings: ObservableObject {
     // MARK: - Generate
 
     func generateInstallationYAML() -> String {
-        var dict: [String: Any] = [
-            "installation_id": installationID,
-            "distribution_name": distributionName.isEmpty ? "鼠鬚管" : distributionName,
-        ]
+        // 保留原始字段（distribution_code_name / install_time / rime_version / update_time 等），仅更新用户可编辑项
+        var dict = originalInstallationDict
+        if dict.isEmpty {
+            // 无原文件时创建最小合法配置
+            dict = [
+                "distribution_code_name": "Squirrel",
+                "distribution_name": "鼠鬚管",
+                "distribution_version": "1.1.2",
+                "installation_id": installationID,
+                "rime_version": "1.16.0",
+                "install_time": Date().formatted(.iso8601),
+                "update_time": Date().formatted(.iso8601),
+            ]
+        }
+        dict["installation_id"] = installationID
         if !syncDir.isEmpty { dict["sync_dir"] = syncDir }
         return (try? Yams.dump(object: dict)) ?? ""
     }
