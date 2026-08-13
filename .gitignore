@@ -74,3 +74,4 @@ scripts/rime_icon_1024.png
 scripts/rime_icon.iconset/
 scripts/AppIcon.icns
 .mimocode/
+.DS_Store
