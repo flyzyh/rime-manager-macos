@@ -1,0 +1,160 @@
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.0.8",
+  "base_commit_sha": "1a87a4c12c993dfcfd7f985f6cd2569c4412c0b8",
+  "prompts": {
+    "eb315b45fc683d3e": {
+      "agent_id": {
+        "tool": "qoder-cn",
+        "id": "task-5c83637690d445fea15a.session.execution",
+        "model": "unknown"
+      },
+      "human_author": "flyzyh <flyzyh@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 1092,
+      "total_deletions": 441,
+      "accepted_lines": 816,
+      "overriden_lines": 0
+    }
+  },
+  "commit_stats": {
+    "git_diff_added_lines": 1402,
+    "git_diff_deleted_lines": 22,
+    "ai_additions": 0,
+    "ai_accepted": 0,
+    "BYMC": 1396,
+    "mixed_additions": 0,
+    "BYAC": 0,
+    "BYRC": 0,
+    "per_file": {
+      "RimeManager/App/ConfigManager.swift": {
+        "BYMC": [
+          "14-18",
+          "32-40",
+          "57-59",
+          "78",
+          "83-104",
+          "125",
+          "144-168",
+          "187-211"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Models/AdvancedSettings.swift": {
+        "BYMC": [
+          "1-132"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Models/DictSettings.swift": {
+        "BYMC": [
+          "8",
+          "12",
+          "21-47"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Models/KeyBindingSettings.swift": {
+        "BYMC": [
+          "1-83"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Models/LuaSettings.swift": {
+        "BYMC": [
+          "1-128"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Models/PhraseSettings.swift": {
+        "BYMC": [
+          "1-81"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Models/PunctuatorSettings.swift": {
+        "BYMC": [
+          "1-96"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Utilities/LocaleManager.swift": {
+        "BYMC": [
+          "184-221"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Views/MainView.swift": {
+        "BYMC": [
+          "7-9",
+          "11-13",
+          "22-24",
+          "26-28",
+          "37-39",
+          "41-43",
+          "50-51",
+          "157-169",
+          "181-197",
+          "228-233",
+          "236-241"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Views/Settings/AdvancedSettingsView.swift": {
+        "BYMC": [
+          "1-154"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Views/Settings/DictListView.swift": {
+        "BYMC": [
+          "94-101"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Views/Settings/KeyBindingEditorView.swift": {
+        "BYMC": [
+          "1-132"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Views/Settings/LuaManagerView.swift": {
+        "BYMC": [
+          "1-97"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Views/Settings/PhraseListView.swift": {
+        "BYMC": [
+          "1-117"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Views/Settings/PunctuatorEditorView.swift": {
+        "BYMC": [
+          "1-148"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      }
+    }
+  },
+  "ipa_account": "zhouyuhan",
+  "commit_timestamp": 1786592024,
+  "requirement_id": ""
+}
