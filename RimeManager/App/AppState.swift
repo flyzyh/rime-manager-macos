@@ -134,7 +134,7 @@ final class AppState: ObservableObject {
 
     func deployRime() {
         let deployer = "/Library/Input Methods/Squirrel.app/Contents/MacOS/rime_deployer"
-        let squirrelBin = "/Library/Input Methods/Squirrel.app/Contents/MacOS/Squirrel"
+        let squirrelApp = "/Library/Input Methods/Squirrel.app"
         let sharedSupport = "/Library/Input Methods/Squirrel.app/Contents/SharedSupport"
         guard let rimeDir = rimeDirectoryURL else {
             FeedbackManager.shared.showError("error.dir_not_set".localized)
@@ -145,11 +145,25 @@ final class AppState: ObservableObject {
         task.launchPath = deployer
         task.arguments = ["--build", rimeDir.path, sharedSupport]
         task.terminationHandler = { [weak self] _ in
-            // After build, signal Squirrel to reload
-            let signal = Process()
-            signal.launchPath = squirrelBin
-            signal.arguments = ["--reload"]
-            try? signal.run()
+            // 完全重启 Squirrel：--reload 只重载方案/词库，
+            // 面板外观（squirrel.custom.yaml 的 style）必须重启输入法才生效
+            let kill = Process()
+            kill.launchPath = "/usr/bin/pkill"
+            kill.arguments = ["-f", "Squirrel.app/Contents/MacOS/Squirrel"]
+            kill.terminationHandler = { _ in
+                let reopen = Process()
+                reopen.launchPath = "/usr/bin/open"
+                reopen.arguments = [squirrelApp]
+                try? reopen.run()
+            }
+            do {
+                try kill.run()
+            } catch {
+                let reopen = Process()
+                reopen.launchPath = "/usr/bin/open"
+                reopen.arguments = [squirrelApp]
+                try? reopen.run()
+            }
 
             Task { @MainActor in
                 self?.configManager.loadAllConfigs(in: self?.rimeDirectoryURL)
