@@ -36,6 +36,8 @@ final class AdvancedSettings: ObservableObject {
     @Published var userdbCount: Int = 0
 
     private var rawDefaultDict: [String: Any] = [:]
+    /// 加载时的完整 filters 列表，用于安全重建（避免覆盖掉 lua_filter 等条目）
+    private var originalFilters: [String] = []
 
     // MARK: - Load
 
@@ -56,10 +58,12 @@ final class AdvancedSettings: ObservableObject {
             }
         }
 
-        // simplifiers from schema
+        // simplifiers from schema：记录完整 filters 列表
+        enabledSimplifiers = [:]
         if let d = try? Yams.load(yaml: schemaYAML) as? [String: Any],
            let engine = d["engine"] as? [String: Any],
            let filters = engine["filters"] as? [String] {
+            originalFilters = filters
             for f in filters {
                 if f.hasPrefix("simplifier@") {
                     let name = f.replacingOccurrences(of: "simplifier@", with: "")
@@ -88,10 +92,20 @@ final class AdvancedSettings: ObservableObject {
         var patch: [String: Any] = [:]
         patch["switcher"] = ["hotkeys": switcherHotkeys, "caption": switcherCaption]
 
-        // simplifier filters
-        let enabled = enabledSimplifiers.filter { $0.value }.map { "simplifier@\($0.key)" }
-        if !enabled.isEmpty {
-            patch["engine/filters"] = enabled
+        // simplifier 开关：以完整原始列表为基底重建，绝不部分覆盖
+        if !originalFilters.isEmpty {
+            let enabledSet = Set(enabledSimplifiers.filter { $0.value }.map { "simplifier@\($0.key)" })
+            var rebuilt: [String] = []
+            for f in originalFilters {
+                if f.hasPrefix("simplifier@") {
+                    if enabledSet.contains(f) { rebuilt.append(f) }
+                } else {
+                    rebuilt.append(f)
+                }
+            }
+            if rebuilt != originalFilters {
+                patch["engine/filters"] = rebuilt
+            }
         }
         return patch
     }

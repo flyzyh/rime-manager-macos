@@ -86,11 +86,14 @@ final class PunctuatorSettings: ObservableObject {
             }
             return map
         }
-        return [
-            "punctuator": [
-                "half_shape": mapDict(halfShape),
-                "full_shape": mapDict(fullShape),
-            ]
-        ]
+
+        var punctPatch: [String: Any] = [:]
+        let half = mapDict(halfShape)
+        let full = mapDict(fullShape)
+        // 空映射不写入，避免用空字典覆盖 schema 原有定义
+        if !half.isEmpty { punctPatch["half_shape"] = half }
+        if !full.isEmpty { punctPatch["full_shape"] = full }
+
+        return punctPatch.isEmpty ? [:] : ["punctuator": punctPatch]
     }
 }

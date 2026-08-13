@@ -155,12 +155,11 @@ final class InputSettings: ObservableObject {
                     "Control_R": "noop",
                 ]
             ],
-            "translator": [
-                "enable_encoder": enableEncoder,
-                "enable_sentence": enableSentence,
-                "enable_user_dict": enableUserDict,
-                "encode_commit_history": encodeCommitHistory,
-            ],
+            // 使用扁平键合并单个 translator 设置，避免覆盖 schema 中的 dictionary 引用
+            "translator/enable_encoder": enableEncoder,
+            "translator/enable_sentence": enableSentence,
+            "translator/enable_user_dict": enableUserDict,
+            "translator/encode_commit_history": encodeCommitHistory,
             // Ensure Return key works correctly in web editors
             "key_binder/bindings/+": [
                 ["when": "composing", "accept": "Return", "send": "Return"],

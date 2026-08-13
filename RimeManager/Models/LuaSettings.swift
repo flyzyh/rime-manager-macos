@@ -9,6 +9,8 @@ final class LuaSettings: ObservableObject {
     @Published var reverseLookups: [String: Bool] = [:]
 
     private var rawSchemaDict: [String: Any] = [:]
+    /// 加载时的完整 engine 列表（含非 lua 项），用于安全重建
+    private var originalSections: [String: [String]] = [:]
 
     struct LuaEntry: Identifiable {
         let id = UUID()
@@ -45,6 +47,15 @@ final class LuaSettings: ObservableObject {
               let engine = dict["engine"] as? [String: Any] else { return }
         rawSchemaDict = dict
 
+        // 保存完整原始列表
+        for section in ["processors", "segmentors", "translators", "filters"] {
+            if let list = engine[section] as? [String] {
+                originalSections[section] = list
+            } else if let list = engine[section] as? [Any] {
+                originalSections[section] = list.compactMap { $0 as? String }
+            }
+        }
+
         var entries: [LuaEntry] = []
         let sections: [(String, String)] = [
             ("processors", "lua_processor"),
@@ -53,9 +64,9 @@ final class LuaSettings: ObservableObject {
         ]
 
         for (section, prefix) in sections {
-            guard let list = engine[section] as? [Any] else { continue }
-            for item in list {
-                guard let str = item as? String, str.hasPrefix(prefix) else { continue }
+            guard let list = originalSections[section] else { continue }
+            for str in list {
+                guard str.hasPrefix(prefix) else { continue }
                 let scriptName = str.replacingOccurrences(of: "\(prefix)@*", with: "")
                 entries.append(LuaEntry(
                     fullName: str,
@@ -68,18 +79,12 @@ final class LuaSettings: ObservableObject {
             }
         }
 
-        // 扫描反查
-        if let reverse = dict["reverse_lookup"] as? [String: Any] {
-            for (key, _) in reverse {
-                reverseLookups[key] = true
-            }
-        }
-        if let engineList = engine["translators"] as? [String] {
-            for item in engineList {
-                if item.hasPrefix("reverse_lookup_translator@") {
-                    let name = item.replacingOccurrences(of: "reverse_lookup_translator@", with: "")
-                    reverseLookups[name] = true
-                }
+        // 反查：仅管理 translators 中的 reverse_lookup_translator@ 条目
+        reverseLookups = [:]
+        if let translators = originalSections["translators"] {
+            for item in translators where item.hasPrefix("reverse_lookup_translator@") {
+                let name = item.replacingOccurrences(of: "reverse_lookup_translator@", with: "")
+                reverseLookups[name] = true
             }
         }
 
@@ -99,28 +104,38 @@ final class LuaSettings: ObservableObject {
 
     // MARK: - Generate
 
-    /// 生成 patch：engine 段仅保留启用的 lua 引用 + 反查开关
+    /// 生成 patch：以完整原始列表为基底重建，仅剔除被禁用的 lua / 反查条目。
+    /// 绝不使用部分列表覆盖——那会破坏 script_translator 等核心组件。
     func generatePatch() -> [String: Any] {
         var patch: [String: Any] = [:]
 
-        // engine: 按 section 分组重建 lua 引用（保留非 lua 项由 patch 追加机制处理）
-        var enginePatch: [String: Any] = [:]
-        for section in ["processors", "translators", "filters"] {
-            let enabled = luaEntries.filter { $0.engineSection == section && $0.enabled }
-                .map(\.fullName)
-            if !enabled.isEmpty {
-                enginePatch[section] = enabled
-            }
-        }
-        if !enginePatch.isEmpty { patch["engine"] = enginePatch }
+        // 三个可编辑 section
+        let luaPrefixBySection: [String: String] = [
+            "processors": "lua_processor",
+            "translators": "lua_translator",
+            "filters": "lua_filter",
+        ]
 
-        // reverse lookup translators
-        let enabledReverse = reverseLookups.filter { $0.value }.map { "reverse_lookup_translator@\($0.key)" }
-        if !enabledReverse.isEmpty {
-            var translators = (enginePatch["translators"] as? [String]) ?? []
-            translators.append(contentsOf: enabledReverse)
-            enginePatch["translators"] = translators
-            patch["engine"] = enginePatch
+        for (section, prefix) in luaPrefixBySection {
+            guard let original = originalSections[section] else { continue }
+            let enabledSet = Set(luaEntries.filter { $0.engineSection == section && $0.enabled }.map(\.fullName))
+
+            var rebuilt: [String] = []
+            for item in original {
+                if item.hasPrefix(prefix) {
+                    if enabledSet.contains(item) { rebuilt.append(item) }
+                    // 被禁用的 lua 条目剔除
+                } else if section == "translators" && item.hasPrefix("reverse_lookup_translator@") {
+                    let name = item.replacingOccurrences(of: "reverse_lookup_translator@", with: "")
+                    if reverseLookups[name] ?? false { rebuilt.append(item) }
+                } else {
+                    rebuilt.append(item) // 非 lua 核心组件原样保留
+                }
+            }
+
+            if rebuilt != original {
+                patch["engine/\(section)"] = rebuilt
+            }
         }
 
         return patch
