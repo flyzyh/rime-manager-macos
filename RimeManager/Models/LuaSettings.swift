@@ -11,6 +11,8 @@ final class LuaSettings: ObservableObject {
     private var rawSchemaDict: [String: Any] = [:]
     /// 加载时的完整 engine 列表（含非 lua 项），用于安全重建
     private var originalSections: [String: [String]] = [:]
+    /// schema 原始目录，保证被旧 patch 禁用的 Lua 仍可显示和恢复
+    private var schemaSections: [String: [String]] = [:]
 
     struct LuaEntry: Identifiable {
         let id = UUID()
@@ -42,10 +44,12 @@ final class LuaSettings: ObservableObject {
 
     // MARK: - Load
 
-    func load(schemaYAML: String) {
+    func load(schemaYAML: String, customYAML: String = "") {
         guard let dict = try? Yams.load(yaml: schemaYAML) as? [String: Any],
               let engine = dict["engine"] as? [String: Any] else { return }
         rawSchemaDict = dict
+        originalSections = [:]
+        schemaSections = [:]
 
         // 保存完整原始列表
         for section in ["processors", "segmentors", "translators", "filters"] {
@@ -53,6 +57,19 @@ final class LuaSettings: ObservableObject {
                 originalSections[section] = list
             } else if let list = engine[section] as? [Any] {
                 originalSections[section] = list.compactMap { $0 as? String }
+            }
+        }
+        schemaSections = originalSections
+
+        // Existing custom patches are what Rime actually applies; `+` and `@n`
+        // forms are normalized into full lists so UI state and rewrites agree.
+        let effectiveSections = RimePatchNormalizer.effectiveEngineSections(
+            schemaYAML: schemaYAML,
+            patchYAML: customYAML
+        )
+        for section in originalSections.keys {
+            if let list = effectiveSections[section] {
+                originalSections[section] = list
             }
         }
 
@@ -64,15 +81,20 @@ final class LuaSettings: ObservableObject {
         ]
 
         for (section, prefix) in sections {
-            guard let list = originalSections[section] else { continue }
-            for str in list {
+            guard let list = schemaSections[section] else { continue }
+            var catalog = list
+            for item in originalSections[section] ?? [] where !catalog.contains(item) {
+                catalog.append(item)
+            }
+            for str in catalog {
                 guard str.hasPrefix(prefix) else { continue }
                 let scriptName = str.replacingOccurrences(of: "\(prefix)@*", with: "")
+                let enabled = originalSections[section]?.contains(str) ?? false
                 entries.append(LuaEntry(
                     fullName: str,
                     type: prefix.replacingOccurrences(of: "lua_", with: ""),
                     scriptName: scriptName,
-                    enabled: true,
+                    enabled: enabled,
                     description: Self.descriptions[scriptName] ?? "",
                     engineSection: section
                 ))
@@ -81,10 +103,10 @@ final class LuaSettings: ObservableObject {
 
         // 反查：仅管理 translators 中的 reverse_lookup_translator@ 条目
         reverseLookups = [:]
-        if let translators = originalSections["translators"] {
+        if let translators = schemaSections["translators"] {
             for item in translators where item.hasPrefix("reverse_lookup_translator@") {
                 let name = item.replacingOccurrences(of: "reverse_lookup_translator@", with: "")
-                reverseLookups[name] = true
+                reverseLookups[name] = originalSections["translators"]?.contains(item) ?? false
             }
         }
 

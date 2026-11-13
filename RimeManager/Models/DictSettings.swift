@@ -11,6 +11,15 @@ final class DictSettings: ObservableObject {
     private var originalYAML: String = ""
     private var rimeDirURL: URL?
 
+    func reset() {
+        dictFileURL = nil
+        originalYAML = ""
+        rimeDirURL = nil
+        importTables = []
+        schemaName = ""
+        entryCounts = [:]
+    }
+
     struct DictEntry: Identifiable {
         let id = UUID()
         let name: String
@@ -30,7 +39,8 @@ final class DictSettings: ObservableObject {
             let relPath = name.hasSuffix(".dict.yaml") ? name : "\(name).dict.yaml"
             let fileURL = rimeDir.appendingPathComponent(relPath)
             guard fm.fileExists(atPath: fileURL.path),
-                  let content = try? String(contentsOf: fileURL, encoding: .utf8) else { continue }
+                  let data = try? Data(contentsOf: fileURL) else { continue }
+            let content = Self.decodedText(data)
 
             var count = 0
             for line in content.components(separatedBy: "\n") {
@@ -49,11 +59,16 @@ final class DictSettings: ObservableObject {
 
     /// Load from rime_mint.dict.yaml
     func load(from url: URL) {
+        reset()
         dictFileURL = url
-        guard let content = try? String(contentsOf: url, encoding: .utf8) else { return }
+        guard let data = try? Data(contentsOf: url) else { return }
+        let content = Self.decodedText(data)
         originalYAML = content
 
-        guard let dict = try? Yams.load(yaml: content) as? [String: Any] else { return }
+        // dict.yaml 通常含两个文档（元数据 + `...` 之后的词条正文），
+        // Yams.load 遇到多文档会直接抛错，必须逐文档解析取第一个
+        guard let documents = try? Yams.load_all(yaml: content),
+              let dict = documents.compactMap({ $0 as? [String: Any] }).first else { return }
         schemaName = dict["name"] as? String ?? ""
 
         if let tables = dict["import_tables"] as? [String] {
@@ -64,16 +79,43 @@ final class DictSettings: ObservableObject {
         }
     }
 
-    /// Generate updated YAML with current import_tables
+    /// Generate updated YAML with current import_tables.
+    /// 采用文本替换只改 import_tables 块：Yams.load 只解析第一个文档，
+    /// 直接重解析再 dump 会丢掉 `...` 之后的词条正文和全部注释。
     func generateYAML() -> String {
-        guard var dict = try? Yams.load(yaml: originalYAML) as? [String: Any] else {
+        let enabled = importTables.filter(\.enabled).map(\.name)
+        guard let newBlock = try? Yams.dump(object: ["import_tables": enabled]) else {
             return originalYAML
         }
+        let newLines = newBlock.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
 
-        let enabled = importTables.filter(\.enabled).map(\.name)
-        dict["import_tables"] = enabled
+        var lines = originalYAML.components(separatedBy: "\n")
 
-        return (try? Yams.dump(object: dict)) ?? originalYAML
+        guard let start = lines.firstIndex(where: { $0.hasPrefix("import_tables:") }) else {
+            // 原文件没有 import_tables：插入到词条正文分隔符之前，或追加到末尾
+            if let dotIndex = lines.firstIndex(where: { $0.trimmingCharacters(in: .whitespaces) == "..." }) {
+                lines.insert(contentsOf: newLines, at: dotIndex)
+            } else {
+                lines.append(contentsOf: newLines)
+            }
+            return lines.joined(separator: "\n")
+        }
+
+        // 块结束于下一个文档标记 / 顶层键 / 注释行
+        var end = lines.count
+        for i in lines.indices where i > start {
+            let t = lines[i]
+            if t.isEmpty { continue }
+            let isMarker = t == "---" || t == "..."
+            let isTopLevelKey = !t.hasPrefix(" ") && !t.hasPrefix("\t") && !t.hasPrefix("-")
+                && !t.hasPrefix("#") && t.contains(":")
+            if isMarker || isTopLevelKey || t.hasPrefix("#") {
+                end = i
+                break
+            }
+        }
+        lines.replaceSubrange(start..<end, with: newLines)
+        return lines.joined(separator: "\n")
     }
 
     private func dictDescription(for name: String) -> String {
@@ -92,5 +134,15 @@ final class DictSettings: ObservableObject {
         if lower.contains("wubi") { return "五笔词库" }
         if lower.contains("melt") { return "英文词库" }
         return "词库"
+    }
+
+    private static func decodedText(_ data: Data) -> String {
+        if let content = String(data: data, encoding: .utf8) { return content }
+        let gb18030 = String.Encoding(
+            rawValue: CFStringConvertEncodingToNSStringEncoding(
+                CFStringEncoding(CFStringEncodings.GB_18030_2000.rawValue)
+            )
+        )
+        return String(data: data, encoding: gb18030) ?? ""
     }
 }

@@ -44,6 +44,7 @@ struct AdvancedSettingsView: View {
                 ))
                     .textFieldStyle(.roundedBorder)
                     .font(.system(.caption, design: .monospaced))
+                    .disabled(!adv.installationID.isEmpty)
             }
 
             HStack {
@@ -76,7 +77,7 @@ struct AdvancedSettingsView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("adv.opencc_title".localized).font(.headline)
 
-            ForEach(Array(AdvancedSettings.openccChains.keys.sorted()), id: \.self) { chain in
+            ForEach(Array(adv.enabledSimplifiers.keys.sorted()), id: \.self) { chain in
                 HStack {
                     Toggle("", isOn: Binding(
                         get: { adv.enabledSimplifiers[chain] ?? false },
@@ -108,20 +109,36 @@ struct AdvancedSettingsView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("adv.switcher_title".localized).font(.headline)
 
-            HStack {
-                Text("adv.hotkey".localized).font(.caption).foregroundStyle(.secondary)
-                    .frame(width: 90, alignment: .leading)
-                Picker("", selection: Binding(
-                    get: { adv.switcherHotkeys.first ?? "Control+grave" },
-                    set: { adv.switcherHotkeys = [$0] }
-                )) {
-                    ForEach(["Control+grave", "Control+Shift+1", "Control+space", "F4", "Control+comma"], id: \.self) {
-                        Text($0).tag($0)
+            ForEach(adv.switcherHotkeys.indices, id: \.self) { index in
+                HStack {
+                    Text(index == 0 ? "adv.hotkey".localized : "")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 90, alignment: .leading)
+                    TextField("Control+grave", text: Binding(
+                        get: { adv.switcherHotkeys.indices.contains(index) ? adv.switcherHotkeys[index] : "" },
+                        set: { if adv.switcherHotkeys.indices.contains(index) { adv.switcherHotkeys[index] = $0 } }
+                    ))
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(.caption, design: .monospaced))
+
+                    Button {
+                        adv.switcherHotkeys.remove(at: index)
+                    } label: {
+                        Image(systemName: "minus.circle")
                     }
+                    .buttonStyle(.borderless)
+                    .disabled(adv.switcherHotkeys.count <= 1)
                 }
-                .labelsHidden()
-                Spacer()
             }
+
+            Button {
+                adv.switcherHotkeys.append("Control+grave")
+            } label: {
+                Label("adv.hotkey.add".localized, systemImage: "plus.circle")
+            }
+            .buttonStyle(.link)
+            .font(.caption)
         }
         .padding(12)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))

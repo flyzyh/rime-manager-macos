@@ -9,10 +9,11 @@ protocol FileManaging {
     func writeFileContent(_ content: String, to url: URL, shouldBackup: Bool) throws
     func fileExists(at url: URL) -> Bool
     func createFullBackup(of directoryURL: URL) -> URL?
-    func exportConfigAsZip(from sourceURL: URL) -> URL?
+    func exportConfigAsZip(from sourceURL: URL, to destinationURL: URL) throws
     func exportFile(from sourceURL: URL, to destinationURL: URL) throws
     func importFile(from sourceURL: URL, to rimeDirURL: URL) throws -> URL
     func importZip(from zipURL: URL, to rimeDirURL: URL) throws
+    func rejectSymbolicLinksRecursively(in url: URL) throws
 }
 
 extension FileManagerService: FileManaging {}

@@ -27,13 +27,34 @@ final class PunctuatorSettings: ObservableObject {
 
     // MARK: - Load
 
-    func load(schemaYAML: String) {
+    /// 合并加载：schema 的 punctuator 为基底，rime_mint.custom.yaml 中的
+    /// punctuator 补丁覆盖其上（half_shape/full_shape 节点整体替换，
+    /// 与 Rime 运行时合并语义一致），保证手改/程序写入的标点在应用内
+    /// 可见且回写时不丢失
+    func load(schemaYAML: String, customYAML: String = "") {
+        halfShape = []
+        fullShape = []
         guard let dict = try? Yams.load(yaml: schemaYAML) as? [String: Any],
               let punct = dict["punctuator"] as? [String: Any] else { return }
-        rawSchemaDict = dict
+        var effective = punct
 
-        halfShape = parseMap(punct["half_shape"])
-        fullShape = parseMap(punct["full_shape"])
+        if let customDict = try? Yams.load(yaml: customYAML) as? [String: Any],
+           let root = customDict["patch"] as? [String: Any],
+           let customPunct = root["punctuator"] as? [String: Any] {
+            for (key, value) in customPunct {
+                effective[key] = value
+            }
+        }
+        if let customDict = try? Yams.load(yaml: customYAML) as? [String: Any],
+           let root = customDict["patch"] as? [String: Any] {
+            for (key, value) in root where key.hasPrefix("punctuator/") {
+                effective[String(key.dropFirst("punctuator/".count))] = value
+            }
+        }
+
+        rawSchemaDict = dict
+        halfShape = parseMap(effective["half_shape"])
+        fullShape = parseMap(effective["full_shape"])
     }
 
     private func parseMap(_ value: Any?) -> [PunctEntry] {
@@ -94,6 +115,11 @@ final class PunctuatorSettings: ObservableObject {
         if !half.isEmpty { punctPatch["half_shape"] = half }
         if !full.isEmpty { punctPatch["full_shape"] = full }
 
-        return punctPatch.isEmpty ? [:] : ["punctuator": punctPatch]
+        // `punctuator` 整体节点会替换 schema 中的 import_preset 等同级字段；
+        // 必须 patch 到 half_shape/full_shape 子路径。
+        var patch: [String: Any] = [:]
+        if !half.isEmpty { patch["punctuator/half_shape"] = half }
+        if !full.isEmpty { patch["punctuator/full_shape"] = full }
+        return patch
     }
 }

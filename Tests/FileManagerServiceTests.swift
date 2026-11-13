@@ -57,6 +57,20 @@ final class FileManagerServiceTests: XCTestCase {
         XCTAssertTrue(content.isEmpty)
     }
 
+    func testReadGB18030EncodedFile() throws {
+        // GBK/GB18030 编码的词库文件应能读出中文，而不是返回空串
+        let gb18030 = String.Encoding(
+            rawValue: CFStringConvertEncodingToNSStringEncoding(
+                CFStringEncoding(CFStringEncodings.GB_18030_2000.rawValue)
+            )
+        )
+        let fileURL = tempDir.appendingPathComponent("gbk_dict.txt")
+        let content = "你好世界"
+        try content.data(using: gb18030)!.write(to: fileURL)
+
+        XCTAssertEqual(service.readFileContent(at: fileURL), content)
+    }
+
     // MARK: - File Exists Tests
 
     func testFileExists() throws {
@@ -137,5 +151,128 @@ final class FileManagerServiceTests: XCTestCase {
 
         XCTAssertTrue(FileManager.default.fileExists(atPath: resultURL.path))
         XCTAssertEqual(resultURL.lastPathComponent, "import_source.yaml")
+    }
+
+    func testImportFileRejectsSymbolicLinkSource() throws {
+        let target = tempDir.appendingPathComponent("outside.txt")
+        let link = tempDir.appendingPathComponent("squirrel.custom.yaml")
+        try "do-not-touch".write(to: target, atomically: true, encoding: .utf8)
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: target)
+
+        let destDir = tempDir.appendingPathComponent("import_link_dest")
+        try FileManager.default.createDirectory(at: destDir, withIntermediateDirectories: true)
+
+        XCTAssertThrowsError(try service.importFile(from: link, to: destDir))
+        XCTAssertEqual(try String(contentsOf: target, encoding: .utf8), "do-not-touch")
+    }
+
+    func testWriteFileContentRejectsSymbolicLinkDestination() throws {
+        let target = tempDir.appendingPathComponent("outside.txt")
+        let link = tempDir.appendingPathComponent("default.yaml")
+        try "safe".write(to: target, atomically: true, encoding: .utf8)
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: target)
+
+        XCTAssertThrowsError(
+            try service.writeFileContent("unsafe", to: link, shouldBackup: false)
+        )
+        XCTAssertEqual(try String(contentsOf: target, encoding: .utf8), "safe")
+    }
+
+    // MARK: - ZIP Import Tests
+
+    /// 用 ditto 打包目录，keepParent 控制 zip 内是否带顶层目录
+    private func makeZip(contentsDir: URL, zipURL: URL, keepParent: Bool) throws {
+        let process = Process()
+        process.launchPath = "/usr/bin/ditto"
+        process.arguments = keepParent
+            ? ["-c", "-k", "--keepParent", contentsDir.path, zipURL.path]
+            : ["-c", "-k", contentsDir.path, zipURL.path]
+        try process.run()
+        process.waitUntilExit()
+        XCTAssertEqual(process.terminationStatus, 0)
+    }
+
+    func testImportZipWithParentDirectory() throws {
+        let payloadDir = tempDir.appendingPathComponent("payload")
+        try FileManager.default.createDirectory(at: payloadDir, withIntermediateDirectories: true)
+        try "schema".write(to: payloadDir.appendingPathComponent("my.schema.yaml"), atomically: true, encoding: .utf8)
+
+        let zipURL = tempDir.appendingPathComponent("with_parent.zip")
+        try makeZip(contentsDir: payloadDir, zipURL: zipURL, keepParent: true)
+
+        let rimeDir = tempDir.appendingPathComponent("rime")
+        try FileManager.default.createDirectory(at: rimeDir, withIntermediateDirectories: true)
+
+        try service.importZip(from: zipURL, to: rimeDir)
+
+        XCTAssertTrue(FileManager.default.fileExists(atPath: rimeDir.appendingPathComponent("my.schema.yaml").path))
+    }
+
+    func testImportZipWithFlatFiles() throws {
+        // 平铺 zip（无顶层目录）也应正确导入，而不是静默什么都不做
+        let payloadDir = tempDir.appendingPathComponent("payload")
+        try FileManager.default.createDirectory(at: payloadDir, withIntermediateDirectories: true)
+        try "schema".write(to: payloadDir.appendingPathComponent("flat.schema.yaml"), atomically: true, encoding: .utf8)
+
+        let zipURL = tempDir.appendingPathComponent("flat.zip")
+        try makeZip(contentsDir: payloadDir, zipURL: zipURL, keepParent: false)
+
+        let rimeDir = tempDir.appendingPathComponent("rime_flat")
+        try FileManager.default.createDirectory(at: rimeDir, withIntermediateDirectories: true)
+
+        try service.importZip(from: zipURL, to: rimeDir)
+
+        XCTAssertTrue(FileManager.default.fileExists(atPath: rimeDir.appendingPathComponent("flat.schema.yaml").path))
+    }
+
+    func testImportZipRejectsSymbolicLinkEntry() throws {
+        let outside = tempDir.appendingPathComponent("outside.yaml")
+        try "safe".write(to: outside, atomically: true, encoding: .utf8)
+
+        let payloadDir = tempDir.appendingPathComponent("symlink_payload")
+        try FileManager.default.createDirectory(at: payloadDir, withIntermediateDirectories: true)
+        try "schema".write(to: payloadDir.appendingPathComponent("safe.schema.yaml"), atomically: true, encoding: .utf8)
+        try FileManager.default.createSymbolicLink(
+            at: payloadDir.appendingPathComponent("squirrel.custom.yaml"),
+            withDestinationURL: outside
+        )
+
+        let zipURL = tempDir.appendingPathComponent("symlink.zip")
+        try makeZip(contentsDir: payloadDir, zipURL: zipURL, keepParent: true)
+
+        let rimeDir = tempDir.appendingPathComponent("rime_symlink")
+        try FileManager.default.createDirectory(at: rimeDir, withIntermediateDirectories: true)
+
+        XCTAssertThrowsError(try service.importZip(from: zipURL, to: rimeDir))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: rimeDir.appendingPathComponent("squirrel.custom.yaml").path))
+        XCTAssertEqual(try String(contentsOf: outside, encoding: .utf8), "safe")
+    }
+
+    func testExportConfigExcludesPrivateAndBackupDirectories() throws {
+        try "config".write(to: tempDir.appendingPathComponent("default.yaml"), atomically: true, encoding: .utf8)
+        for name in ["backups", "build", "sync", "userdb", "backup_20260101_000000"] {
+            let dir = tempDir.appendingPathComponent(name)
+            try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            try "private".write(to: dir.appendingPathComponent("data.txt"), atomically: true, encoding: .utf8)
+        }
+
+        let zipURL = tempDir.appendingPathComponent("export.zip")
+        try service.exportConfigAsZip(from: tempDir, to: zipURL)
+
+        let extractDir = tempDir.appendingPathComponent("extract")
+        try FileManager.default.createDirectory(at: extractDir, withIntermediateDirectories: true)
+        let process = Process()
+        process.launchPath = "/usr/bin/ditto"
+        process.arguments = ["-x", "-k", zipURL.path, extractDir.path]
+        try process.run()
+        process.waitUntilExit()
+        XCTAssertEqual(process.terminationStatus, 0)
+
+        let roots = try FileManager.default.contentsOfDirectory(at: extractDir, includingPropertiesForKeys: nil)
+        let exportedRoot = try XCTUnwrap(roots.first)
+        for name in ["backups", "build", "sync", "userdb", "backup_20260101_000000"] {
+            XCTAssertFalse(FileManager.default.fileExists(atPath: exportedRoot.appendingPathComponent(name).path))
+        }
+        XCTAssertTrue(FileManager.default.fileExists(atPath: exportedRoot.appendingPathComponent("default.yaml").path))
     }
 }

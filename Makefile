@@ -1,8 +1,11 @@
-.PHONY: build app xcode clean icon test
+.PHONY: build app bundle xcode clean icon test
 
 PROJECT := RimeManager
 APP_DIR := $(PROJECT).app
 BINARY := .build/arm64-apple-macosx/release/$(PROJECT)
+APP_VERSION ?= 1.4.0
+APP_BUILD ?= 132
+CODESIGN_IDENTITY ?= -
 
 build:
 	swift build -c release
@@ -14,7 +17,7 @@ icon:
 	@echo "Using official Rime icon (scripts/AppIcon.icns)"
 	@test -f scripts/AppIcon.icns || (echo "ERROR: icon missing" && exit 1)
 
-app: build
+bundle: build
 	rm -rf "$(APP_DIR)"
 	mkdir -p "$(APP_DIR)/Contents/MacOS"
 	mkdir -p "$(APP_DIR)/Contents/Resources"
@@ -24,15 +27,18 @@ app: build
 	plutil -replace CFBundleName -string "Rime Manager" "$(APP_DIR)/Contents/Info.plist"
 	plutil -replace CFBundleDisplayName -string "Rime Manager" "$(APP_DIR)/Contents/Info.plist"
 	plutil -replace CFBundleIdentifier -string "com.rimemanager.app" "$(APP_DIR)/Contents/Info.plist"
-	plutil -replace CFBundleVersion -string "1" "$(APP_DIR)/Contents/Info.plist"
-	plutil -replace CFBundleShortVersionString -string "1.3.1" "$(APP_DIR)/Contents/Info.plist"
+	plutil -replace CFBundleVersion -string "$(APP_BUILD)" "$(APP_DIR)/Contents/Info.plist"
+	plutil -replace CFBundleShortVersionString -string "$(APP_VERSION)" "$(APP_DIR)/Contents/Info.plist"
 	plutil -replace CFBundlePackageType -string "APPL" "$(APP_DIR)/Contents/Info.plist"
 	plutil -replace CFBundleExecutable -string "$(PROJECT)" "$(APP_DIR)/Contents/Info.plist"
 	plutil -replace LSMinimumSystemVersion -string "14.0" "$(APP_DIR)/Contents/Info.plist"
 	plutil -replace NSHighResolutionCapable -bool YES "$(APP_DIR)/Contents/Info.plist"
 	plutil -replace CFBundleIconFile -string "AppIcon" "$(APP_DIR)/Contents/Info.plist"
 	if [ -f scripts/AppIcon.icns ]; then cp scripts/AppIcon.icns "$(APP_DIR)/Contents/Resources/AppIcon.icns"; fi
+	codesign --force --options runtime --sign "$(CODESIGN_IDENTITY)" "$(APP_DIR)"
 	@echo "App size: $$(du -sh "$(APP_DIR)" | awk '{print $$1}')"
+
+app: bundle
 	@echo "Launching $(APP_DIR)..."
 	open "$(APP_DIR)"
 

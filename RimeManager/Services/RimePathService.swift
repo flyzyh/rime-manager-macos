@@ -52,6 +52,11 @@ final class RimePathService {
 
         return enumerator.compactMap { element -> URL? in
             guard let url = element as? URL else { return nil }
+            let pathComponents = url.pathComponents
+            let excluded = pathComponents.contains {
+                $0 == "build" || $0 == "sync" || $0 == "backups" || $0.hasPrefix("backup_") || $0.hasSuffix(".userdb")
+            }
+            guard !excluded else { return nil }
             let name = url.lastPathComponent.lowercased()
             if name.hasSuffix(".schema.yaml") || name.hasSuffix(".schema.yml") {
                 return url

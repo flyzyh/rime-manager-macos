@@ -42,10 +42,13 @@ struct RimeManagerApp: App {
         .commands {
             CommandGroup(replacing: .appInfo) {
                 Button("About Rime Manager") {
+                    let version = Bundle.main.object(
+                        forInfoDictionaryKey: "CFBundleShortVersionString"
+                    ) as? String ?? "Development"
                     NSApplication.shared.orderFrontStandardAboutPanel(
                         options: [
                             .applicationName: "Rime Manager",
-                            .applicationVersion: "1.1.0",
+                            .applicationVersion: version,
                             .credits: "A macOS tool for managing Rime input method configurations."
                         ]
                     )

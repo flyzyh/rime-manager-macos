@@ -75,6 +75,31 @@ final class ColorSchemeTests: XCTestCase {
         XCTAssertNotNil(ColorScheme.parseHexColor(convertedHex))
     }
 
+    // MARK: - Rime Color Integer Conversion
+
+    func testRimeIntToHexSixDigitStaysOpaque() {
+        // 6 位以内的颜色值补零成 8 位会把高字节 00 当作 alpha=0（全透明）
+        XCTAssertEqual(SchemaAnalyzer.rimeIntToHex(0xFF5733), "FF5733")
+        XCTAssertEqual(SchemaAnalyzer.rimeIntToHex(0xFFFFFF), "FFFFFF")
+        XCTAssertEqual(SchemaAnalyzer.rimeIntToHex(0), "000000")
+    }
+
+    func testRimeIntToHexEightDigitKeepsAlpha() {
+        // 0xAABBGGRR：Rime 的字节序与常见 RGB 相反，8 位值保留 alpha 字节
+        XCTAssertEqual(SchemaAnalyzer.rimeIntToHex(0x80FF5733), "80FF5733")
+        XCTAssertEqual(SchemaAnalyzer.rimeIntToHex(0xFFFF840A), "FFFF840A")
+    }
+
+    func testParseColorFromIntValue() {
+        // YAML 中 0xFF5733 会被解析为 Int，parseColor 需按 6 位不透明处理
+        let color = SchemaAnalyzer.parseColor(0xFF5733)
+        XCTAssertNotNil(color)
+
+        // 非法值返回 nil
+        XCTAssertNil(SchemaAnalyzer.parseColor("bogus color" as Any?))
+        XCTAssertNil(SchemaAnalyzer.parseColor(nil))
+    }
+
     // MARK: - EditableColorScheme Tests
 
     func testEditableColorSchemeParsing() {

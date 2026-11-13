@@ -42,23 +42,28 @@ final class FileManagerService {
     // MARK: - File content
 
     /// Read the content of a text file.
+    /// UTF-8 优先，失败时回退 GB18030（部分 Rime 词库为 GBK 编码）。
+    /// UTF-8 是 ASCII 的超集，ASCII 回退永远不会命中，故不再尝试。
     func readFileContent(at url: URL) -> String {
-        guard let data = try? Data(contentsOf: url),
-              let content = String(data: data, encoding: .utf8) else {
-            // Try other encodings
-            if let data = try? Data(contentsOf: url),
-               let content = String(data: data, encoding: .ascii) {
-                return content
-            }
-            return ""
+        guard let data = try? Data(contentsOf: url) else { return "" }
+        if let content = String(data: data, encoding: .utf8) {
+            return content
         }
-        return content
+        let gb18030 = String.Encoding(
+            rawValue: CFStringConvertEncodingToNSStringEncoding(
+                CFStringEncoding(CFStringEncodings.GB_18030_2000.rawValue)
+            )
+        )
+        return String(data: data, encoding: gb18030) ?? ""
     }
 
     /// Write content to a file, optionally creating a backup first.
     func writeFileContent(_ content: String, to url: URL, shouldBackup: Bool = true) throws {
+        try rejectSymlink(at: url)
         if shouldBackup && fm.fileExists(atPath: url.path) {
-            createBackup(of: url)
+            guard createBackup(of: url) != nil else {
+                throw FileManagerError.backupFailed(url)
+            }
         }
         guard let data = content.data(using: .utf8) else {
             throw FileManagerError.encodingFailed
@@ -71,6 +76,7 @@ final class FileManagerService {
     /// Create a timestamped backup of a file in a backup subdirectory.
     @discardableResult
     func createBackup(of url: URL) -> URL? {
+        guard !isSymbolicLink(at: url) else { return nil }
         let backupDir = url.deletingLastPathComponent()
             .appendingPathComponent("backup_\(dateFormatter.string(from: Date()))")
 
@@ -90,6 +96,8 @@ final class FileManagerService {
 
     /// Create a full directory backup inside Rime/backups/ with timestamp.
     func createFullBackup(of directoryURL: URL) -> URL? {
+        // A backup containing a symlink could later overwrite files outside Rime.
+        guard (try? rejectSymlinkRecursively(in: directoryURL)) != nil else { return nil }
         let backupDir = directoryURL.appendingPathComponent("backups")
         let backupName = "backup_\(dateFormatter.string(from: Date()))"
         let backupURL = backupDir.appendingPathComponent(backupName)
@@ -120,29 +128,40 @@ final class FileManagerService {
     // MARK: - Import / Export
 
     /// Export the entire Rime configuration directory as a ZIP file.
-    func exportConfigAsZip(from sourceURL: URL) -> URL? {
-        let downloadsDir = fm.homeDirectoryForCurrentUser
-            .appendingPathComponent("Downloads")
-        let timestamp = dateFormatter.string(from: Date())
-        let zipName = "RimeConfig_\(timestamp).zip"
-        let zipURL = downloadsDir.appendingPathComponent(zipName)
+    func exportConfigAsZip(from sourceURL: URL, to destinationURL: URL) throws {
+        try rejectSymlink(at: destinationURL)
+        try rejectSymlinkRecursively(in: sourceURL)
+        if fm.fileExists(atPath: destinationURL.path) {
+            try fm.removeItem(at: destinationURL)
+        }
 
-        // Remove existing zip
-        if fm.fileExists(atPath: zipURL.path) {
-            try? fm.removeItem(at: zipURL)
+        // macOS ditto has no --exclude option. Stage only the portable config
+        // entries so user dictionaries, sync state, and backups never leave Rime.
+        let stageRoot = fm.temporaryDirectory
+            .appendingPathComponent("rime_export_\(UUID().uuidString)")
+        let stage = stageRoot.appendingPathComponent(sourceURL.lastPathComponent)
+        defer { try? fm.removeItem(at: stageRoot) }
+        try fm.createDirectory(at: stage, withIntermediateDirectories: true)
+
+        let entries = try fm.contentsOfDirectory(at: sourceURL, includingPropertiesForKeys: nil)
+        for entry in entries {
+            let name = entry.lastPathComponent
+            if name == "backups" || name == "build" || name == "sync" || name == "userdb"
+                || name.hasPrefix("backup_") { continue }
+            try fm.copyItem(at: entry, to: stage.appendingPathComponent(name))
         }
 
         let process = Process()
         process.launchPath = "/usr/bin/ditto"
         process.arguments = ["-c", "-k", "--sequesterRsrc", "--keepParent",
-                             sourceURL.path, zipURL.path]
+                             stage.path, destinationURL.path]
         process.launch()
         process.waitUntilExit()
 
-        if process.terminationStatus == 0 && fm.fileExists(atPath: zipURL.path) {
-            return zipURL
+        guard process.terminationStatus == 0, fm.fileExists(atPath: destinationURL.path) else {
+            try? fm.removeItem(at: destinationURL)
+            throw FileManagerError.exportFailed
         }
-        return nil
     }
 
     /// Export a single file to a user-chosen location.
@@ -155,6 +174,7 @@ final class FileManagerService {
 
     /// Import a single file into the Rime config directory.
     func importFile(from sourceURL: URL, to rimeDirURL: URL) throws -> URL {
+        try rejectSymlink(at: sourceURL)
         let filename = sourceURL.lastPathComponent
         let destURL = rimeDirURL.appendingPathComponent(filename)
 
@@ -174,7 +194,9 @@ final class FileManagerService {
     /// Import a ZIP file containing Rime config into the Rime directory.
     func importZip(from zipURL: URL, to rimeDirURL: URL) throws {
         // Create a backup of the entire directory first
-        createFullBackup(of: rimeDirURL)
+        guard createFullBackup(of: rimeDirURL) != nil else {
+            throw FileManagerError.backupFailed(rimeDirURL)
+        }
 
         // Unzip to a temp directory
         let tempDir = fm.temporaryDirectory.appendingPathComponent("rime_import_\(UUID().uuidString)")
@@ -190,14 +212,27 @@ final class FileManagerService {
             throw FileManagerError.writeFailed("Failed to extract ZIP file")
         }
 
-        // Find the Rime directory inside the extracted content
-        let contents = (try? fm.contentsOfDirectory(at: tempDir, includingPropertiesForKeys: nil)) ?? []
-        guard let rimeSource = contents.first else {
-            throw FileManagerError.writeFailed("No Rime config found in ZIP")
+        // Extracted archives are untrusted: symlink entries can make later config
+        // writes escape the selected Rime directory.
+        try rejectSymlinkRecursively(in: tempDir)
+
+        // 解压根：兼容带顶层目录的 zip（--keepParent 导出）与直接平铺文件的 zip
+        let contents = (try? fm.contentsOfDirectory(
+            at: tempDir,
+            includingPropertiesForKeys: [.isDirectoryKey]
+        )) ?? []
+        var sourceRoot = tempDir
+        if contents.count == 1,
+           let isDir = try? contents[0].resourceValues(forKeys: [.isDirectoryKey]).isDirectory,
+           isDir {
+            sourceRoot = contents[0]
         }
 
         // Copy files from extracted directory to Rime directory
-        let extractedFiles = (try? fm.contentsOfDirectory(at: rimeSource, includingPropertiesForKeys: nil)) ?? []
+        let extractedFiles = (try? fm.contentsOfDirectory(at: sourceRoot, includingPropertiesForKeys: nil)) ?? []
+        guard !extractedFiles.isEmpty else {
+            throw FileManagerError.writeFailed("No Rime config found in ZIP")
+        }
         for fileURL in extractedFiles {
             let fileName = fileURL.lastPathComponent
             let destURL = rimeDirURL.appendingPathComponent(fileName)
@@ -226,6 +261,36 @@ final class FileManagerService {
         return formatter.string(fromByteCount: size)
     }
 
+    // MARK: - Symlink safety
+
+    private func isSymbolicLink(at url: URL) -> Bool {
+        (try? url.resourceValues(forKeys: [.isSymbolicLinkKey]))?.isSymbolicLink ?? false
+    }
+
+    private func rejectSymlink(at url: URL) throws {
+        guard !isSymbolicLink(at: url) else {
+            throw FileManagerError.symbolicLinkRejected(url)
+        }
+    }
+
+    private func rejectSymlinkRecursively(in url: URL) throws {
+        guard let enumerator = fm.enumerator(
+            at: url,
+            includingPropertiesForKeys: [.isSymbolicLinkKey],
+            options: []
+        ) else {
+            throw FileManagerError.readFailed(url)
+        }
+
+        for case let item as URL in enumerator where isSymbolicLink(at: item) {
+            throw FileManagerError.symbolicLinkRejected(item)
+        }
+    }
+
+    func rejectSymbolicLinksRecursively(in url: URL) throws {
+        try rejectSymlinkRecursively(in: url)
+    }
+
     // MARK: - Helpers
 
     private var dateFormatter: DateFormatter = {
@@ -238,6 +303,10 @@ final class FileManagerService {
 enum FileManagerError: LocalizedError {
     case encodingFailed
     case writeFailed(String)
+    case backupFailed(URL)
+    case exportFailed
+    case readFailed(URL)
+    case symbolicLinkRejected(URL)
 
     var errorDescription: String? {
         switch self {
@@ -245,6 +314,14 @@ enum FileManagerError: LocalizedError {
             return "Failed to encode content as UTF-8."
         case .writeFailed(let path):
             return "Failed to write file: \(path)"
+        case .backupFailed(let url):
+            return "Backup failed: \(url.lastPathComponent)"
+        case .exportFailed:
+            return "Failed to export configuration ZIP."
+        case .readFailed(let url):
+            return "Failed to read directory: \(url.lastPathComponent)"
+        case .symbolicLinkRejected(let url):
+            return "Rejected symbolic link for safety: \(url.lastPathComponent)"
         }
     }
 }

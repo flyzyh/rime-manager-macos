@@ -4,189 +4,255 @@ import Yams
 /// Observable model for Rime input method settings (from schema YAML).
 /// Provides visual control bindings that map to schema YAML.
 final class InputSettings: ObservableObject {
-    // MARK: - Switches
-
-    @Published var asciiMode: Bool = false           // Chinese (false) / English (true)
+    @Published var asciiMode: Bool = false
     @Published var emojiSuggestion: Bool = true
-    @Published var fullShape: Bool = false           // Half (false) / Full (true)
+    @Published var fullShape: Bool = false
     @Published var toneDisplay: Bool = false
-    @Published var transcription: Bool = false       // Simplified (false) / Traditional (true)
-    @Published var asciiPunct: Bool = false          // Chinese punct (false) / Western punct (true)
-
-    // MARK: - Menu / Display
+    @Published var transcription: Bool = false
+    @Published var asciiPunct: Bool = false
 
     @Published var pageSize: Int = 9
     @Published var candidateCount: Int = 9
     @Published var showPaging: Bool = false
 
-    // MARK: - Caps Lock
+    @Published var capsLockSwitch: Bool = true
+    @Published var shiftSwitch: String = "commit_code"
+    @Published var returnDirectCommit: Bool = false
 
-    @Published var capsLockSwitch: Bool = true        // Good old caps lock behavior
-    @Published var shiftSwitch: String = "commit_code" // Shift key behavior
-
-    // MARK: - Translator Engine
-
-    @Published var enableEncoder: Bool = true         // 自动造词
-    @Published var enableSentence: Bool = true        // 整句输入
-    @Published var enableUserDict: Bool = true        // 用户词典
-    @Published var encodeCommitHistory: Bool = true   // 自动编码历史
-
-    // MARK: - Schema info (read-only)
+    @Published var enableEncoder: Bool = true
+    @Published var enableSentence: Bool = true
+    @Published var enableUserDict: Bool = true
+    @Published var encodeCommitHistory: Bool = true
 
     @Published var schemaName: String = ""
     @Published var schemaVersion: String = ""
     @Published var schemaID: String = ""
 
-    // MARK: - Raw references for writing back
-
     private var rawSchemaDict: [String: Any] = [:]
     private var rawDefaultCustomDict: [String: Any] = [:]
-    private var hasDefaultCustom: Bool = false
+    private var rawSchemaCustomDict: [String: Any] = [:]
+    private var effectiveSwitches: [[String: Any]] = []
 
-    // MARK: - Load from schema + default.custom
+    func load(schemaYAML: String, defaultCustomYAML: String, schemaCustomYAML: String = "") {
+        asciiMode = false
+        emojiSuggestion = true
+        fullShape = false
+        toneDisplay = false
+        transcription = false
+        asciiPunct = false
+        pageSize = 9
+        candidateCount = 9
+        capsLockSwitch = true
+        shiftSwitch = "commit_code"
+        returnDirectCommit = false
+        enableEncoder = true
+        enableSentence = true
+        enableUserDict = true
+        encodeCommitHistory = true
+        schemaName = ""
+        schemaVersion = ""
+        schemaID = ""
+        rawSchemaDict = [:]
+        rawDefaultCustomDict = [:]
+        rawSchemaCustomDict = [:]
+        effectiveSwitches = []
 
-    func load(schemaYAML: String, defaultCustomYAML: String) {
         if let dict = try? Yams.load(yaml: schemaYAML) as? [String: Any] {
             rawSchemaDict = dict
-
             if let schema = dict["schema"] as? [String: Any] {
                 schemaName = schema["name"] as? String ?? ""
                 schemaVersion = schema["version"] as? String ?? ""
                 schemaID = schema["schema_id"] as? String ?? ""
             }
-
-            // Parse switches
             if let switches = dict["switches"] as? [[String: Any]] {
-                for sw in switches {
-                    guard let name = sw["name"] as? String else { continue }
-                    let reset = sw["reset"] as? Int ?? 0
-                    switch name {
-                    case "ascii_mode": asciiMode = (reset != 0)
-                    case "emoji_suggestion": emojiSuggestion = (reset != 0)
-                    case "full_shape": fullShape = (reset != 0)
-                    case "tone_display": toneDisplay = (reset != 0)
-                    case "transcription": transcription = (reset != 0)
-                    case "ascii_punct": asciiPunct = (reset != 0)
-                    default: break
-                    }
-                }
+                effectiveSwitches = switches
             }
-
-            // Menu
             if let menu = dict["menu"] as? [String: Any] {
                 pageSize = menu["page_size"] as? Int ?? 9
             }
             candidateCount = pageSize
         }
 
-        // Parse default.custom.yaml
-        if let customDict = try? Yams.load(yaml: defaultCustomYAML) as? [String: Any] {
-            rawDefaultCustomDict = customDict
-            hasDefaultCustom = true
+        let defaultDict = (try? Yams.load(yaml: defaultCustomYAML) as? [String: Any]) ?? [:]
+        rawDefaultCustomDict = defaultDict
+        if let patch = defaultDict["patch"] as? [String: Any] {
+            readDefaultPatch(patch)
+        }
 
-            let root = customDict["patch"] as? [String: Any] ?? customDict
+        let schemaDict = (try? Yams.load(yaml: schemaCustomYAML) as? [String: Any]) ?? [:]
+        rawSchemaCustomDict = schemaDict
+        if let patch = schemaDict["patch"] as? [String: Any] {
+            readSchemaCustomPatch(patch)
+        }
+        readSwitchStates()
+    }
 
-            if let menu = root["menu"] as? [String: Any] {
-                let ps = menu["page_size"] as? Int
-                if ps != nil { pageSize = ps!; candidateCount = ps! }
-            }
+    private func readDefaultPatch(_ root: [String: Any]) {
+        let menuPageSize = (root["menu"] as? [String: Any])?["page_size"] as? Int
+            ?? root["menu/page_size"] as? Int
+        if let menuPageSize {
+            pageSize = menuPageSize
+            candidateCount = menuPageSize
+        }
 
-            if let ascii = root["ascii_composer"] as? [String: Any] {
-                capsLockSwitch = ascii["good_old_caps_lock"] as? Bool ?? true
-                if let switchKey = ascii["switch_key"] as? [String: String] {
-                    shiftSwitch = switchKey["Shift_L"] ?? "commit_code"
+        if let caps = root["ascii_composer/good_old_caps_lock"] as? Bool {
+            capsLockSwitch = caps
+        } else if let caps = (root["ascii_composer"] as? [String: Any])?["good_old_caps_lock"] as? Bool {
+            capsLockSwitch = caps
+        }
+        if let shift = (root["ascii_composer/switch_key"] as? [String: Any])?["Shift_L"] as? String {
+            shiftSwitch = shift
+        } else if let shift = ((root["ascii_composer"] as? [String: Any])?["switch_key"] as? [String: Any])?["Shift_L"] as? String {
+            shiftSwitch = shift
+        }
+
+        let bindings = (root["key_binder/bindings"] as? [[String: Any]])
+            ?? (root["key_binder/bindings/+"] as? [[String: Any]])
+            ?? ((root["key_binder"] as? [String: Any])?["bindings"] as? [[String: Any]])
+            ?? ((root["key_binder"] as? [String: Any])?["bindings/+"] as? [[String: Any]])
+            ?? []
+        if bindings.contains(where: { $0["accept"] as? String == "Return" && $0["send"] as? String == "Return" }) {
+            returnDirectCommit = true
+        }
+    }
+
+    private func readSchemaCustomPatch(_ root: [String: Any]) {
+        if let page = (root["menu"] as? [String: Any])?["page_size"] as? Int ?? root["menu/page_size"] as? Int {
+            pageSize = page
+            candidateCount = page
+        }
+
+        if let customSwitches = root["switches"] as? [[String: Any]] {
+            effectiveSwitches = customSwitches
+        } else {
+            for (key, value) in root where key.hasPrefix("switches/@") && key.hasSuffix("/reset") {
+                let parts = key.split(separator: "/")
+                if parts.count == 3, let index = Int(parts[1].dropFirst()), index < effectiveSwitches.count {
+                    effectiveSwitches[index]["reset"] = value
                 }
             }
+        }
 
-            // Translator engine switches
-            if let translator = root["translator"] as? [String: Any] {
-                enableEncoder = translator["enable_encoder"] as? Bool ?? true
-                enableSentence = translator["enable_sentence"] as? Bool ?? true
-                enableUserDict = translator["enable_user_dict"] as? Bool ?? true
-                encodeCommitHistory = translator["encode_commit_history"] as? Bool ?? true
+        let customTranslator = (root["translator"] as? [String: Any]) ?? [:]
+        if let value = customTranslator["enable_encoder"] ?? root["translator/enable_encoder"] {
+            enableEncoder = value as? Bool ?? enableEncoder
+        }
+        if let value = customTranslator["enable_sentence"] ?? root["translator/enable_sentence"] {
+            enableSentence = value as? Bool ?? enableSentence
+        }
+        if let value = customTranslator["enable_user_dict"] ?? root["translator/enable_user_dict"] {
+            enableUserDict = value as? Bool ?? enableUserDict
+        }
+        if let value = customTranslator["encode_commit_history"] ?? root["translator/encode_commit_history"] {
+            encodeCommitHistory = value as? Bool ?? encodeCommitHistory
+        }
+    }
+
+    private func readSwitchStates() {
+        for sw in effectiveSwitches {
+            guard let name = sw["name"] as? String else { continue }
+            let reset = sw["reset"] as? Int ?? 0
+            switch name {
+            case "ascii_mode": asciiMode = reset != 0
+            case "emoji_suggestion": emojiSuggestion = reset != 0
+            case "full_shape": fullShape = reset != 0
+            case "tone_display": toneDisplay = reset != 0
+            case "transcription": transcription = reset != 0
+            case "ascii_punct": asciiPunct = reset != 0
+            default: break
             }
         }
-
-        // Also check schema-level translator settings
-        if let translator = rawSchemaDict["translator"] as? [String: Any] {
-            enableEncoder = translator["enable_encoder"] as? Bool ?? enableEncoder
-            enableSentence = translator["enable_sentence"] as? Bool ?? enableSentence
-            enableUserDict = translator["enable_user_dict"] as? Bool ?? enableUserDict
-            encodeCommitHistory = translator["encode_commit_history"] as? Bool ?? encodeCommitHistory
-        }
     }
 
-    // MARK: - Generate schema YAML patch
+    static let managedSwitchNames: Set<String> = [
+        "ascii_mode", "emoji_suggestion", "full_shape",
+        "tone_display", "transcription", "ascii_punct",
+    ]
 
-    func generateSchemaPatch() -> String {
-        // Build switches with updated reset values
-        let switches: [[String: Any]] = [
-            switchEntry("ascii_mode", reset: asciiMode ? 1 : 0),
-            switchEntry("emoji_suggestion", reset: emojiSuggestion ? 1 : 0),
-            switchEntry("full_shape", reset: fullShape ? 1 : 0),
-            switchEntry("tone_display", reset: toneDisplay ? 1 : 0),
-            switchEntry("transcription", reset: transcription ? 1 : 0),
-            switchEntry("ascii_punct", reset: asciiPunct ? 1 : 0),
+    private var currentResets: [String: Int] {
+        [
+            "ascii_mode": asciiMode ? 1 : 0,
+            "emoji_suggestion": emojiSuggestion ? 1 : 0,
+            "full_shape": fullShape ? 1 : 0,
+            "tone_display": toneDisplay ? 1 : 0,
+            "transcription": transcription ? 1 : 0,
+            "ascii_punct": asciiPunct ? 1 : 0,
         ]
-
-        let patch: [String: Any] = [
-            "switches": switches,
-            "menu": ["page_size": candidateCount],
-        ]
-
-        do {
-            return try Yams.dump(object: ["patch": patch])
-        } catch {
-            return ""
-        }
     }
 
-    /// Generate default.custom.yaml content
-    func generateDefaultCustomPatch() -> String {
+    /// switches patch 到 schema custom 层；已有完整列表时保持完整列表，否则只写 reset。
+    func switchesPatchDict() -> [String: Any] {
+        guard !effectiveSwitches.isEmpty else { return [:] }
+        let resets = currentResets
+        var changed = false
+        for sw in effectiveSwitches {
+            guard let name = sw["name"] as? String, Self.managedSwitchNames.contains(name) else { continue }
+            if (sw["reset"] as? Int ?? 0) != resets[name] { changed = true; break }
+        }
+        guard changed else { return [:] }
+
+        let originalPatch = rawSchemaCustomDict["patch"] as? [String: Any] ?? [:]
+        if originalPatch["switches"] != nil {
+            let rebuilt = effectiveSwitches.map { sw -> [String: Any] in
+                guard let name = sw["name"] as? String,
+                      Self.managedSwitchNames.contains(name),
+                      (sw["reset"] as? Int ?? 0) != resets[name] else { return sw }
+                var updated = sw
+                updated["reset"] = resets[name]
+                return updated
+            }
+            return ["switches": rebuilt]
+        }
+
+        var patch: [String: Any] = [:]
+        for (index, sw) in effectiveSwitches.enumerated() {
+            guard let name = sw["name"] as? String,
+                  Self.managedSwitchNames.contains(name),
+                  (sw["reset"] as? Int ?? 0) != resets[name] else { continue }
+            patch["switches/@\(index)/reset"] = resets[name]
+        }
+        return patch
+    }
+
+    /// schema custom 补丁内容（不含 patch 包装）。
+    func schemaCustomPatchDict() -> [String: Any] {
         var patch: [String: Any] = [
-            "menu": ["page_size": candidateCount],
-            "ascii_composer": [
-                "good_old_caps_lock": capsLockSwitch,
-                "switch_key": [
-                    "Caps_Lock": "clear",
-                    "Shift_L": shiftSwitch,
-                    "Shift_R": shiftSwitch,
-                    "Control_L": "noop",
-                    "Control_R": "noop",
-                ]
-            ],
-            // 使用扁平键合并单个 translator 设置，避免覆盖 schema 中的 dictionary 引用
+            "menu/page_size": candidateCount,
             "translator/enable_encoder": enableEncoder,
             "translator/enable_sentence": enableSentence,
             "translator/enable_user_dict": enableUserDict,
             "translator/encode_commit_history": encodeCommitHistory,
-            // Ensure Return key works correctly in web editors
-            "key_binder/bindings/+": [
-                ["when": "composing", "accept": "Return", "send": "Return"],
-                ["when": "composing", "accept": "KP_Enter", "send": "Return"],
-            ]
         ]
-
-        // Preserve additional key_binder if it existed
-        if let existingPatch = rawDefaultCustomDict["patch"] as? [String: Any],
-           let binder = existingPatch["key_binder"] {
-            var mutable = patch
-            mutable["key_binder"] = binder
-            patch = mutable
-        }
-
-        do {
-            return try Yams.dump(object: ["patch": patch])
-        } catch {
-            return ""
-        }
+        patch.merge(switchesPatchDict()) { _, new in new }
+        return patch
     }
 
-    private func switchEntry(_ name: String, reset: Int) -> [String: Any] {
-        // Preserve original states if available
-        let originalSwitches = (rawSchemaDict["switches"] as? [[String: Any]]) ?? []
-        let original = originalSwitches.first { ($0["name"] as? String) == name }
-        let states = original?["states"] as? [String] ?? []
-        return ["name": name, "reset": reset, "states": states]
+    /// default.custom.yaml 补丁内容（不含 patch 包装）。
+    func defaultCustomPatchDict() -> [String: Any] {
+        var patch: [String: Any] = [
+            "menu/page_size": candidateCount,
+            "ascii_composer/good_old_caps_lock": capsLockSwitch,
+            "ascii_composer/switch_key/Shift_L": shiftSwitch,
+        ]
+
+        let originalPatch = rawDefaultCustomDict["patch"] as? [String: Any] ?? [:]
+        let hasFullBindings = originalPatch["key_binder/bindings"] != nil || originalPatch["key_binder"] != nil
+        if returnDirectCommit, !hasFullBindings, originalPatch["key_binder/bindings/+"] == nil {
+            patch["key_binder/bindings/+"] = Self.returnKeyFixBindings
+        }
+        return patch
+    }
+
+    /// Web 编辑器中 Return 键直接上屏的兼容绑定。
+    nonisolated(unsafe) static let returnKeyFixBindings: [[String: Any]] = [
+        ["when": "composing", "accept": "Return", "send": "Return"]
+    ]
+
+    func generateDefaultCustomPatch() -> String {
+        do {
+            return try Yams.dump(object: ["patch": defaultCustomPatchDict()])
+        } catch {
+            return "# Rime Manager: YAML serialization failed; original file was not safe to rebuild.\n"
+        }
     }
 }

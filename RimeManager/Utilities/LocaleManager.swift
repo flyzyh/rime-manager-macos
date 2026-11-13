@@ -192,6 +192,8 @@ final class LocaleManager: ObservableObject, @unchecked Sendable {
         "phrase.code_placeholder": ["en": "Code (e.g. mima)", "zh-Hans": "编码（如 mima）", "zh-Hant": "編碼（如 mima）"],
         "phrase.text_placeholder": ["en": "Phrase (e.g. 密码)", "zh-Hans": "短语（如 密码）", "zh-Hant": "短語（如 密碼）"],
         "phrase.delete": ["en": "Delete", "zh-Hans": "删除", "zh-Hant": "刪除"],
+        "phrase.not_loaded": ["en": "The active schema does not load custom_phrase.txt; these entries will not appear.", "zh-Hans": "当前方案未加载 custom_phrase.txt，以下短语不会出现在候选中。", "zh-Hant": "當前方案未載入 custom_phrase.txt，以下短語不會出現在候選中。"],
+        "phrase.install": ["en": "Add custom phrase support", "zh-Hans": "接入 custom phrase", "zh-Hant": "接入 custom phrase"],
         "punct.half": ["en": "Half-width", "zh-Hans": "半角", "zh-Hant": "半角"],
         "punct.full": ["en": "Full-width", "zh-Hans": "全角", "zh-Hant": "全角"],
         "punct.hint": ["en": "Key to symbol mapping when typing", "zh-Hans": "输入按键时输出的符号映射", "zh-Hant": "輸入按鍵時輸出的符號映射"],
@@ -213,6 +215,7 @@ final class LocaleManager: ObservableObject, @unchecked Sendable {
         "adv.opencc_title": ["en": "Chinese Conversion (OpenCC)", "zh-Hans": "简繁转换（OpenCC）", "zh-Hant": "簡繁轉換（OpenCC）"],
         "adv.switcher_title": ["en": "Schema Switcher", "zh-Hans": "方案切换", "zh-Hant": "方案切換"],
         "adv.hotkey": ["en": "Hotkey", "zh-Hans": "快捷键", "zh-Hant": "快捷鍵"],
+        "adv.hotkey.add": ["en": "Add Hotkey", "zh-Hans": "添加快捷键", "zh-Hant": "新增快捷鍵"],
         "adv.userdb_title": ["en": "User Dictionary", "zh-Hans": "用户词库", "zh-Hant": "用戶詞庫"],
         "adv.userdb_size": ["en": "Size", "zh-Hans": "占用空间", "zh-Hant": "佔用空間"],
         "adv.clear_userdb": ["en": "Clear User Dictionary", "zh-Hans": "清空用户词库", "zh-Hant": "清空用戶詞庫"],
@@ -302,6 +305,7 @@ final class LocaleManager: ObservableObject, @unchecked Sendable {
         "input.shift_inline_ascii": ["en": "Inline ASCII", "zh-Hans": "内嵌英文", "zh-Hant": "內嵌英文"],
         "input.shift_clear": ["en": "Clear", "zh-Hans": "清除", "zh-Hant": "清除"],
         "input.shift_noop": ["en": "No Action", "zh-Hans": "无操作", "zh-Hant": "無操作"],
+        "input.return_direct_commit": ["en": "Return commits directly while composing", "zh-Hans": "编辑态 Return 直接上屏", "zh-Hant": "編輯態 Return 直接上屏"],
 
         // Schema list (additional)
         "schema.subtitle": ["en": "Manage input schemas", "zh-Hans": "管理输入方案", "zh-Hant": "管理輸入方案"],

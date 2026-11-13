@@ -52,11 +52,10 @@ final class SquirrelConfig: ObservableObject {
 
     // MARK: - Raw YAML reference
 
-    private var originalYAML: String = ""
-    private var rawDict: [String: Any] = [:]
     private var originalCustomDict: [String: Any] = [:]
-    /// 加载时各配色方案的颜色快照，用于判断用户是否修改过（避免回写破坏原始配色）
-    private var schemeSnapshot: [String: [String: String]] = [:]
+    /// 加载时各配色方案的颜色与样式覆盖快照，用于判断用户是否修改过（避免回写破坏原始配色）
+    private var schemeColorSnapshot: [String: [String: String]] = [:]
+    private var schemeOverridesSnapshot: [String: [String: String]] = [:]
     var customFileExists: Bool = false
 
     func load(from yaml: String) {
@@ -64,6 +63,9 @@ final class SquirrelConfig: ObservableObject {
     }
 
     func load(baseYAML: String, customYAML: String) {
+        // 先复位，避免二次加载时新目录无 menu 等配置导致残留上一次的值
+        pageSize = 9
+
         // 1. Parse base config
         var baseDict: [String: Any] = [:]
         if !baseYAML.isEmpty {
@@ -81,7 +83,7 @@ final class SquirrelConfig: ObservableObject {
         // 3. Merge: custom "patch" overrides base "style"
         let baseStyle = baseDict["style"] as? [String: Any] ?? [:]
         let customPatch = customDict["patch"] as? [String: Any] ?? [:]
-        let customStyle = customPatch["style"] as? [String: Any] ?? [:]
+        let customStyle = Self.patchMap(customPatch, "style")
 
         // Merge style: custom overrides base
         var mergedStyle = baseStyle
@@ -104,11 +106,14 @@ final class SquirrelConfig: ObservableObject {
         // From custom (only if not empty — {} means "don't override")
         if let customSchemes = customPatch["preset_color_schemes"] as? [String: Any],
            !customSchemes.isEmpty {
-            for (k, v) in customSchemes { mergedSchemes[k] = v }
+            mergedSchemes = Self.deepMerged(mergedSchemes, customSchemes)
         }
         for (key, value) in customPatch {
             if key.hasPrefix("preset_color_schemes/") {
-                mergedSchemes[String(key.dropFirst("preset_color_schemes/".count))] = value
+                let path = String(key.dropFirst("preset_color_schemes/".count))
+                var incoming: [String: Any] = [:]
+                Self.setValue(&incoming, path: path, value: value)
+                mergedSchemes = Self.deepMerged(mergedSchemes, incoming)
             }
         }
 
@@ -116,19 +121,22 @@ final class SquirrelConfig: ObservableObject {
         applyStyle(mergedStyle)
         applyColorSchemes(mergedSchemes)
 
-        // 快照各方案的当前颜色值
-        schemeSnapshot = [:]
+        // 快照各方案的当前颜色与样式覆盖值
+        schemeColorSnapshot = [:]
+        schemeOverridesSnapshot = [:]
         for (name, scheme) in colorSchemes {
-            schemeSnapshot[name] = scheme.hexDict()
+            schemeColorSnapshot[name] = scheme.hexDict()
+            schemeOverridesSnapshot[name] = scheme.overridesSnapshot()
         }
 
-        // Store for writing back
-        originalYAML = customYAML.isEmpty ? baseYAML : customYAML
-        rawDict = customDict.isEmpty ? baseDict : customDict
-
-        // Menu (page size)
-        let menu = customPatch["menu"] as? [String: Any] ?? baseDict["menu"] as? [String: Any]
-        if let menu = menu {
+        // Menu (page size)：patch 有 "menu" 节点与 "menu/page_size" 扁平键两种形态，
+        // 生成侧按基底情况二选一写入，读取侧必须同时兼容，否则扁平键形态
+        // 在重启后读不回来，再次应用时会被默认值覆盖
+        if let menu = customPatch["menu"] as? [String: Any] {
+            pageSize = menu["page_size"] as? Int ?? 9
+        } else if let flat = customPatch["menu/page_size"] as? Int {
+            pageSize = flat
+        } else if let menu = baseDict["menu"] as? [String: Any] {
             pageSize = menu["page_size"] as? Int ?? 9
         }
 
@@ -138,8 +146,8 @@ final class SquirrelConfig: ObservableObject {
         showNotificationsWhen = ShowNotificationsWhen(rawValue: notifRaw ?? "") ?? .appropriate
 
         // Top-level: app_options
-        let appOpts = customPatch["app_options"] as? [String: Any]
-            ?? baseDict["app_options"] as? [String: Any]
+        let customAppOptions = Self.patchMap(customPatch, "app_options")
+        let appOpts = customAppOptions.isEmpty ? baseDict["app_options"] as? [String: Any] : customAppOptions
         appOptions = Self.parseAppOptions(appOpts)
     }
 
@@ -193,7 +201,7 @@ final class SquirrelConfig: ObservableObject {
 
     func generateYAML() -> String {
         // Build style block from current settings
-        var styleBlock: [String: Any] = [
+        let styleBlock: [String: Any] = [
             "color_scheme": colorSchemeLightName,
             "color_scheme_dark": colorSchemeDarkName,
             "text_orientation": textOrientation.yamlValue,
@@ -223,54 +231,59 @@ final class SquirrelConfig: ObservableObject {
             "comment_font_point": Int(commentFontPoint),
         ]
 
-        // Preserve original custom YAML structure, only updating style + app_options.
-        // Include modified preset_color_schemes in the patch.
+        // Preserve original custom YAML structure, but flatten managed nodes into
+        // field-level slash paths. A nested `style`, `preset_color_schemes`, or
+        // `app_options` patch replaces the whole node in Rime and drops unmanaged siblings.
         var result: [String: Any]
         if customFileExists, var patch = originalCustomDict["patch"] as? [String: Any] {
-            // Update style
-            if var existingStyle = patch["style"] as? [String: Any] {
-                for (k, v) in styleBlock { existingStyle[k] = v }
-                patch["style"] = existingStyle
-            } else {
-                patch["style"] = styleBlock
-            }
-            // App options: merge user entries with browser defaults
-            var mergedAppOpts = Self.defaultAppOptions
-            for (k, v) in appOptionsDict() { mergedAppOpts[k] = v }
-            patch["app_options"] = mergedAppOpts
-            // Preserve menu if set
-            if pageSize != 9 { patch["menu"] = ["page_size": pageSize] }
-            // Notification setting
-            patch["show_notifications_when"] = showNotificationsWhen.rawValue
-            // 仅回写用户修改过的配色方案，保留原始方案条目（含 alpha/spacing 等扩展字段）
-            let modifiedSchemes = modifiedColorSchemesDict()
-            if !modifiedSchemes.isEmpty {
-                var mergedSchemes = patch["preset_color_schemes"] as? [String: Any] ?? [:]
-                for (name, value) in modifiedSchemes {
-                    mergedSchemes[name] = value
-                }
-                patch["preset_color_schemes"] = mergedSchemes
-            }
-            // 未修改时保留原始 custom 中的方案定义，不做删除
+            Self.flattenManagedSquirrelPatch(&patch)
             result = ["patch": patch]
         } else {
-            var patch: [String: Any] = [
-                "style": styleBlock,
-                "show_notifications_when": showNotificationsWhen.rawValue,
-            ]
-            var mergedAppOpts = Self.defaultAppOptions
-            for (k, v) in appOptionsDict() { mergedAppOpts[k] = v }
-            patch["app_options"] = mergedAppOpts
-            if pageSize != 9 { patch["menu"] = ["page_size": pageSize] }
-            // Include modified color schemes
-            let modifiedSchemes = modifiedColorSchemesDict()
-            if !modifiedSchemes.isEmpty {
-                patch["preset_color_schemes"] = modifiedSchemes
-            }
-            result = ["patch": patch]
+            result = ["patch": [String: Any]()]
         }
+        var patch = (result["patch"] as? [String: Any]) ?? [:]
+        for (key, value) in styleBlock { patch["style/\(key)"] = value }
+        for (key, value) in modifiedColorSchemeLeafDict() { patch[key] = value }
+        for (key, value) in appOptionLeafDict() { patch[key] = value }
+        patch["menu/page_size"] = pageSize
+        patch["show_notifications_when"] = showNotificationsWhen.rawValue
+        result = ["patch": patch]
 
-        return (try? Yams.dump(object: result)) ?? ""
+        guard let yaml = try? Yams.dump(object: result), !yaml.isEmpty else {
+            return "# Rime Manager: YAML serialization failed; original file was not safe to rebuild.\n"
+        }
+        return yaml
+    }
+
+    /// Returns modified schemes as patch-path leaves, e.g. `preset_color_schemes/aqua/back_color`.
+    private func modifiedColorSchemeLeafDict() -> [String: Any] {
+        var result: [String: Any] = [:]
+        for (schemeName, scheme) in colorSchemes {
+            let colorsUnchanged = schemeColorSnapshot[schemeName] == scheme.hexDict()
+            let overridesUnchanged = schemeOverridesSnapshot[schemeName] == scheme.overridesSnapshot()
+            guard !colorsUnchanged || !overridesUnchanged else { continue }
+            for (field, value) in scheme.toDict() {
+                result["preset_color_schemes/\(schemeName)/\(field)"] = value
+            }
+        }
+        return result
+    }
+
+    /// App options as leaves, preserving unmanaged bundles and fields in the base config.
+    private func appOptionLeafDict() -> [String: Any] {
+        var result: [String: Any] = [:]
+        var merged = Self.defaultAppOptions
+        for (bundleID, options) in appOptionsDict() { merged[bundleID] = options }
+        for (bundleID, value) in merged {
+            guard let options = value as? [String: Any] else {
+                result["app_options/\(bundleID)"] = value
+                continue
+            }
+            for (field, value) in options {
+                result["app_options/\(bundleID)/\(field)"] = value
+            }
+        }
+        return result
     }
 
     // MARK: - Effective colors for preview
@@ -286,11 +299,13 @@ final class SquirrelConfig: ObservableObject {
         guard let dict = dict else { return [] }
         return dict.compactMap { bundleID, value in
             guard let opts = value as? [String: Any] else { return nil }
+            let unknown = opts.filter { !["no_inline", "ascii_mode", "vim_mode"].contains($0.key) }
             return AppOptionEntry(
                 bundleID: bundleID,
                 noInline: opts["no_inline"] as? Bool,
                 asciiMode: opts["ascii_mode"] as? Bool,
-                vimMode: opts["vim_mode"] as? Bool
+                vimMode: opts["vim_mode"] as? Bool,
+                unknownOptions: unknown
             )
         }
         .sorted { $0.bundleID < $1.bundleID }
@@ -303,6 +318,7 @@ final class SquirrelConfig: ObservableObject {
             if let v = entry.noInline { opts["no_inline"] = v }
             if let v = entry.asciiMode { opts["ascii_mode"] = v }
             if let v = entry.vimMode { opts["vim_mode"] = v }
+            for (key, value) in entry.unknownOptions { opts[key] = value }
             if !opts.isEmpty { result[entry.bundleID] = opts }
         }
         return result
@@ -312,8 +328,11 @@ final class SquirrelConfig: ObservableObject {
     func modifiedColorSchemesDict() -> [String: Any] {
         var result: [String: Any] = [:]
         for (name, scheme) in colorSchemes {
-            // 与加载时的快照比较，只写回用户改过的方案
-            if let snap = schemeSnapshot[name], snap == scheme.hexDict() {
+            // 与加载时的快照比较：颜色与样式覆盖（alpha/圆角/间距等）任一被改过都需回写，
+            // 否则方案级的样式修改会静默丢失
+            let colorsUnchanged = schemeColorSnapshot[name] == scheme.hexDict()
+            let overridesUnchanged = schemeOverridesSnapshot[name] == scheme.overridesSnapshot()
+            if colorsUnchanged && overridesUnchanged {
                 continue // 未修改，跳过
             }
             result[name] = scheme.toDict()
@@ -348,6 +367,76 @@ final class SquirrelConfig: ObservableObject {
     private func parseStatusType(_ value: Any?) -> StatusMessageType {
         guard let str = value as? String else { return .mix }
         return StatusMessageType(rawValue: str) ?? .mix
+    }
+
+    // MARK: - Patch path helpers
+
+    private static func patchMap(_ patch: [String: Any], _ root: String) -> [String: Any] {
+        var result = patch[root] as? [String: Any] ?? [:]
+        let prefix = root + "/"
+        for (key, value) in patch where key.hasPrefix(prefix) {
+            let path = String(key.dropFirst(prefix.count))
+            setValue(&result, path: path, value: value)
+        }
+        return result
+    }
+
+    private static func setValue(_ dict: inout [String: Any], path: String, value: Any) {
+        let parts = path.split(separator: "/").map(String.init)
+        guard !parts.isEmpty else { return }
+        if parts.count == 1 {
+            dict[parts[0]] = value
+            return
+        }
+        var child = dict[parts[0]] as? [String: Any] ?? [:]
+        setValue(&child, path: parts.dropFirst().joined(separator: "/"), value: value)
+        dict[parts[0]] = child
+    }
+
+    private static func deepMerged(_ base: [String: Any], _ new: [String: Any]) -> [String: Any] {
+        var result = base
+        for (key, newValue) in new {
+            if let baseDict = result[key] as? [String: Any], let newDict = newValue as? [String: Any] {
+                result[key] = deepMerged(baseDict, newDict)
+            } else {
+                result[key] = newValue
+            }
+        }
+        return result
+    }
+
+    /// Convert old nested managed nodes to slash-path leaves without losing unknown fields.
+    private static func flattenManagedSquirrelPatch(_ patch: inout [String: Any]) {
+        let style = patchMap(patch, "style")
+        patch.removeValue(forKey: "style")
+        for (key, value) in style { patch["style/\(key)"] = value }
+
+        let schemes = patchMap(patch, "preset_color_schemes")
+        patch.removeValue(forKey: "preset_color_schemes")
+        for (scheme, fields) in schemes {
+            guard let fields = fields as? [String: Any] else {
+                patch["preset_color_schemes/\(scheme)"] = fields
+                continue
+            }
+            for (field, value) in fields {
+                patch["preset_color_schemes/\(scheme)/\(field)"] = value
+            }
+        }
+
+        let apps = patchMap(patch, "app_options")
+        patch.removeValue(forKey: "app_options")
+        for (bundle, value) in apps {
+            guard let fields = value as? [String: Any] else {
+                patch["app_options/\(bundle)"] = value
+                continue
+            }
+            for (field, fieldValue) in fields {
+                patch["app_options/\(bundle)/\(field)"] = fieldValue
+            }
+        }
+
+        patch.removeValue(forKey: "menu")
+        patch["menu/page_size"] = patch["menu/page_size"] ?? 9
     }
 }
 
@@ -424,6 +513,18 @@ final class EditableColorScheme: ObservableObject, Identifiable {
     @Published var schemeSpacing: Double?
     @Published var schemeBorderHeight: Double?
     @Published var schemeBorderWidth: Double?
+    /// Fields added by users or future Squirrel versions must not be dropped.
+    private var unknownFields: [String: Any] = [:]
+    private static let knownSchemeKeys: Set<String> = [
+        "back_color", "hilited_candidate_back_color", "label_color",
+        "hilited_candidate_label_color", "candidate_text_color",
+        "hilited_candidate_text_color", "comment_text_color",
+        "hilited_comment_text_color", "text_color", "hilited_text_color",
+        "border_color", "shadow_color", "alpha", "translucency",
+        "mutual_exclusive", "shadow_size", "corner_radius",
+        "hilited_corner_radius", "line_spacing", "spacing", "border_height",
+        "border_width"
+    ]
 
     init(name: String) {
         self.name = name
@@ -455,6 +556,7 @@ final class EditableColorScheme: ObservableObject, Identifiable {
         schemeSpacing = doubleVal(dict["spacing"])
         schemeBorderHeight = doubleVal(dict["border_height"])
         schemeBorderWidth = doubleVal(dict["border_width"])
+        unknownFields = dict.filter { !Self.knownSchemeKeys.contains($0.key) }
     }
 
     /// Safely extract a Double from a YAML value (handles both Int and Double).
@@ -480,6 +582,22 @@ final class EditableColorScheme: ObservableObject, Identifiable {
             "border_color": borderColor,
             "shadow_color": shadowColor,
         ]
+    }
+
+    /// 方案级样式覆盖（alpha/圆角/间距等）的字符串快照，用于变更检测
+    func overridesSnapshot() -> [String: String] {
+        var d: [String: String] = [:]
+        if let v = schemeAlpha { d["alpha"] = "\(v)" }
+        if let v = schemeTranslucency { d["translucency"] = "\(v)" }
+        if let v = schemeMutualExclusive { d["mutual_exclusive"] = "\(v)" }
+        if let v = schemeShadowSize { d["shadow_size"] = "\(v)" }
+        if let v = schemeCornerRadius { d["corner_radius"] = "\(v)" }
+        if let v = schemeHilitedCornerRadius { d["hilited_corner_radius"] = "\(v)" }
+        if let v = schemeLineSpacing { d["line_spacing"] = "\(v)" }
+        if let v = schemeSpacing { d["spacing"] = "\(v)" }
+        if let v = schemeBorderHeight { d["border_height"] = "\(v)" }
+        if let v = schemeBorderWidth { d["border_width"] = "\(v)" }
+        return d
     }
 
     func toDict() -> [String: Any] {
@@ -508,6 +626,7 @@ final class EditableColorScheme: ObservableObject, Identifiable {
         if let v = schemeSpacing { dict["spacing"] = Int(v) }
         if let v = schemeBorderHeight { dict["border_height"] = Int(v) }
         if let v = schemeBorderWidth { dict["border_width"] = Int(v) }
+        dict.merge(unknownFields) { _, new in new }
         return dict
     }
 
@@ -571,4 +690,19 @@ struct AppOptionEntry: Identifiable {
     var noInline: Bool?
     var asciiMode: Bool?
     var vimMode: Bool?
+    var unknownOptions: [String: Any] = [:]
+
+    init(
+        bundleID: String,
+        noInline: Bool? = nil,
+        asciiMode: Bool? = nil,
+        vimMode: Bool? = nil,
+        unknownOptions: [String: Any] = [:]
+    ) {
+        self.bundleID = bundleID
+        self.noInline = noInline
+        self.asciiMode = asciiMode
+        self.vimMode = vimMode
+        self.unknownOptions = unknownOptions
+    }
 }

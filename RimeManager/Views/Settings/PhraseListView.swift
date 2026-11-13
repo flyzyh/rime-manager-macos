@@ -21,6 +21,21 @@ struct PhraseListView: View {
     var body: some View {
         VStack(spacing: 0) {
             addRow
+            if !phraseSettings.schemaSupportsCustomPhrase {
+                HStack(spacing: 8) {
+                    Label("phrase.not_loaded".localized, systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                    Button("phrase.install".localized) {
+                        phraseSettings.installIntoCurrentSchema()
+                    }
+                    .buttonStyle(.link)
+                    .font(.caption)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 8)
+            }
 
             if phraseSettings.phrases.isEmpty {
                 ContentUnavailableView(
@@ -40,11 +55,12 @@ struct PhraseListView: View {
 
     private var addRow: some View {
         HStack(spacing: 8) {
+            TextField("phrase.text_placeholder".localized, text: $newText)
+                .textFieldStyle(.roundedBorder)
+                .frame(minWidth: 220)
             TextField("phrase.code_placeholder".localized, text: $newCode)
                 .textFieldStyle(.roundedBorder)
                 .frame(width: 120)
-            TextField("phrase.text_placeholder".localized, text: $newText)
-                .textFieldStyle(.roundedBorder)
             TextField("1", text: $newWeight)
                 .textFieldStyle(.roundedBorder)
                 .frame(width: 50)
@@ -64,13 +80,14 @@ struct PhraseListView: View {
         List {
             ForEach(Array(filteredPhrases.enumerated()), id: \.element.id) { index, phrase in
                 HStack(spacing: 12) {
-                    Text(phrase.code)
+                    Text(phrase.text)
                         .font(.system(.body, design: .monospaced))
                         .foregroundStyle(.blue)
-                        .frame(width: 100, alignment: .leading)
+                        .frame(minWidth: 220, alignment: .leading)
 
-                    Text(phrase.text)
+                    Text(phrase.code)
                         .font(.body)
+                        .foregroundStyle(.secondary)
 
                     Spacer()
 
@@ -107,8 +124,8 @@ struct PhraseListView: View {
 
     private func addPhrase() {
         let weight = Int(newWeight) ?? 1
-        phraseSettings.add(code: newCode.trimmingCharacters(in: .whitespaces),
-                           text: newText.trimmingCharacters(in: .whitespaces),
+        phraseSettings.add(text: newText.trimmingCharacters(in: .whitespaces),
+                           code: newCode.trimmingCharacters(in: .whitespaces),
                            weight: weight)
         newCode = ""
         newText = ""

@@ -5,7 +5,6 @@ enum SidebarItem: String, CaseIterable, Identifiable {
     case appearance
     case input
     case punct
-    case keybind
     case phrases
     case dicts
     case lua
@@ -20,7 +19,6 @@ enum SidebarItem: String, CaseIterable, Identifiable {
         case .appearance: return "nav.appearance".localized
         case .input: return "nav.input".localized
         case .punct: return "nav.punct".localized
-        case .keybind: return "nav.keybind".localized
         case .phrases: return "nav.phrases".localized
         case .dicts: return "nav.dicts".localized
         case .lua: return "nav.lua".localized
@@ -35,7 +33,6 @@ enum SidebarItem: String, CaseIterable, Identifiable {
         case .appearance: return "paintpalette"
         case .input: return "keyboard"
         case .punct: return "textformat"
-        case .keybind: return "keyboard.badge.ellipsis"
         case .phrases: return "text.badge.plus"
         case .dicts: return "books.vertical"
         case .lua: return "chevron.left.forwardslash.chevron.right"
@@ -47,7 +44,7 @@ enum SidebarItem: String, CaseIterable, Identifiable {
 
     var section: SidebarSection {
         switch self {
-        case .appearance, .input, .punct, .keybind, .phrases, .dicts, .lua, .advanced: return .config
+        case .appearance, .input, .punct, .phrases, .dicts, .lua, .advanced: return .config
         case .schemas, .backups: return .manage
         }
     }
@@ -85,8 +82,9 @@ struct MainView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button(action: {
-                    appState.applyAllConfigChanges()
-                    appState.deployRime()
+                        if appState.applyAllConfigChanges() {
+                            appState.deployRime()
+                        }
                 }) {
                     Label("toolbar.apply_deploy".localized, systemImage: "checkmark.icloud")
                 }
@@ -227,8 +225,6 @@ struct MainView: View {
             InputSettingsView()
         case .punct:
             PunctuatorEditorView()
-        case .keybind:
-            KeyBindingEditorView()
         case .phrases:
             PhraseListView()
         case .dicts:

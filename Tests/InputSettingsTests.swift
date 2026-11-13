@@ -67,27 +67,41 @@ final class InputSettingsTests: XCTestCase {
         XCTAssertEqual(settings.shiftSwitch, "commit_text")
     }
 
-    // MARK: - Generate Patch Tests
+    // MARK: - Switches Patch Tests
+
+    func testSwitchesPatchEmptyWhenNoSchemaSwitches() {
+        let settings = InputSettings()
+        settings.asciiMode = true
+
+        XCTAssertTrue(settings.switchesPatchDict().isEmpty)
+    }
+
+    func testSwitchesPatchEmptyWhenUnchanged() {
+        let settings = InputSettings()
+        settings.load(schemaYAML: testSchemaYAML, defaultCustomYAML: "")
+
+        XCTAssertTrue(settings.switchesPatchDict().isEmpty)
+    }
+
+    func testSwitchesPatchUpdatesResetAndPreservesUnmanaged() {
+        let settings = InputSettings()
+        settings.load(schemaYAML: testSchemaYAML, defaultCustomYAML: "")
+
+        // 修改受管开关
+        settings.emojiSuggestion = false
+        settings.asciiMode = true
+
+        let patch = settings.switchesPatchDict()
+        XCTAssertEqual(patch["switches/@1/reset"] as? Int, 0)
+        XCTAssertEqual(patch["switches/@0/reset"] as? Int, 1)
+        XCTAssertEqual(patch.count, 2, "item reset patch 不需要重写未受管条目")
+    }
+
+    // MARK: - Default Custom Patch Tests
 
     func testGenerateSchemaPatch() {
         let settings = InputSettings()
-        settings.asciiMode = true
-        settings.emojiSuggestion = false
         settings.candidateCount = 6
-
-        let patch = settings.generateSchemaPatch()
-
-        XCTAssertFalse(patch.isEmpty)
-        XCTAssertTrue(patch.contains("patch"))
-        XCTAssertTrue(patch.contains("switches"))
-        XCTAssertTrue(patch.contains("menu"))
-    }
-
-    func testGenerateDefaultCustomPatch() {
-        let settings = InputSettings()
-        settings.candidateCount = 8
-        settings.capsLockSwitch = false
-        settings.shiftSwitch = "clear"
 
         let patch = settings.generateDefaultCustomPatch()
 
@@ -95,6 +109,56 @@ final class InputSettingsTests: XCTestCase {
         XCTAssertTrue(patch.contains("patch"))
         XCTAssertTrue(patch.contains("ascii_composer"))
         XCTAssertTrue(patch.contains("menu"))
+    }
+
+    func testReturnKeyFixNotDuplicatedWhenAlreadyPresent() {
+        let settings = InputSettings()
+        let defaultCustomYAML = """
+        patch:
+          key_binder/bindings/+:
+            - {when: composing, accept: Return, send: Return}
+            - {when: composing, accept: KP_Enter, send: Return}
+        """
+        settings.load(schemaYAML: testSchemaYAML, defaultCustomYAML: defaultCustomYAML)
+
+        // 基底已包含追加键时不再重复写入
+        XCTAssertNil(settings.defaultCustomPatchDict()["key_binder/bindings/+"])
+    }
+
+    func testReturnKeyFixSkippedWhenFullBindingsPresent() {
+        let settings = InputSettings()
+        let defaultCustomYAML = """
+        patch:
+          key_binder/bindings:
+            - {when: composing, accept: Return, send: Return}
+        """
+        settings.load(schemaYAML: testSchemaYAML, defaultCustomYAML: defaultCustomYAML)
+
+        // 基底为全量键形态（编辑绑定后的产物）时同样不得补写追加键，
+        // 否则同一 patch 内 "key_binder/bindings" 与 "key_binder/bindings/+" 冲突
+        XCTAssertNil(settings.defaultCustomPatchDict()["key_binder/bindings/+"])
+    }
+
+    var testSchemaYAML: String {
+        """
+        schema:
+          schema_id: test
+          name: Test
+
+        switches:
+          - name: ascii_mode
+            reset: 0
+            states: [中文, English]
+          - name: emoji_suggestion
+            reset: 1
+            states: ["😣", "😁"]
+          - name: unmanaged_switch
+            reset: 0
+            states: [off, on]
+
+        menu:
+          page_size: 7
+        """
     }
 
     // MARK: - Switch Parsing

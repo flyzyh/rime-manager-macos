@@ -77,12 +77,13 @@ final class FileBrowserModel: ObservableObject {
 
     func fileContentDidChange(_ newContent: String) {
         editingContent = newContent
+        isEditing = true
         hasUnsavedChanges = true
     }
 
     /// Reload current file content if not being edited locally.
     func refreshCurrentFileIfNeeded() {
-        if let file = selectedFile, !isEditing {
+        if let file = selectedFile, !isEditing, !hasUnsavedChanges {
             loadFileContent(file)
         }
     }

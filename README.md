@@ -8,6 +8,18 @@ A native macOS app for managing Rime input method configurations visually. Desig
 
 ## 更新日志 Changelog
 
+完整历史见 [CHANGELOG.md](CHANGELOG.md)。
+
+### v1.4.0
+- 🛡️ 修复 Rime 配置写入层级与 nested patch 覆盖问题：外观、标点、translator、switches、engine 现在写入正确层级并保留未管理字段。
+- ✏️ 自定义短语改为 Rime 标准的 `短语 \t 编码 \t 权重` 顺序；当前方案未接入时提供警告和一键接入。
+- 🎨 Squirrel 外观、配色方案和应用规则改为字段级 patch，保留基础配置、未建模字段和其他配色方案。
+- 🔣 标点 patch 保留 `punctuator.import_preset`，不再清空符号库。
+- ⌨️ Return 直接上屏改为显式开关；方案切换快捷键支持多值编辑。
+- 🧩 支持 `engine/.../+:`、`engine/.../@N:` 旧补丁形态，被禁用的 Lua 可恢复显示。
+- 📚 词典管理跟随当前方案 `translator/dictionary`，支持多文档词典和 GB18030 读取。
+- 💾 所有生成配置先校验后写盘；外部编辑和内置编辑器保存后自动同步设置模型。
+
 ### v1.3.1
 - 🔵 修复候选词数量配置层级错误（schema 层 page_size 需 patch 到 rime_mint.custom.yaml）
 - 🎨 恢复备份后自动重启输入法，外观配置真正生效
@@ -64,15 +76,11 @@ A native macOS app for managing Rime input method configurations visually. Desig
 - 图形化管理 `custom_phrase.txt`
 - 添加 / 删除 / 搜索短语
 - 权重调节（影响候选排序）
+- 自动识别当前方案是否加载 `custom_phrase.txt`；未接入时提供一键接入
 
 ### 🔣 标点映射 Punctuation
 - 半角 / 全角符号映射编辑
 - 支持普通提交、多候选、成对括号三种格式
-
-### ⌨️ 按键绑定 Key Bindings
-- 可视化编辑键盘快捷键
-- 触发时机 / 按键 / 动作 / 目标四维配置
-- 60+ 预设键位下拉选择
 
 ### 🧩 Lua 扩展开关 Lua Extensions
 - 17 个 Lua 脚本按处理器 / 翻译器 / 过滤器分组启停
@@ -82,7 +90,7 @@ A native macOS app for managing Rime input method configurations visually. Desig
 ### ⚙️ 高级设置 Advanced
 - **同步配置**：installation_id、同步目录
 - **简繁转换（OpenCC）**：8 种转换链选择
-- **方案切换快捷键**自定义
+- **方案切换快捷键**自定义，支持多快捷键
 - **用户词库管理**：占用空间统计、一键清空
 
 ### 💾 备份管理 Backups
@@ -130,7 +138,7 @@ A native macOS app for managing Rime input method configurations visually. Desig
 | 修改配置 | 侧边栏选择分类，调整后点击工具栏 **应用并部署** |
 | 切换输入方案 | 输入方案页启用/禁用，Ctrl+` 切换 |
 | 管理词库 | 词库页开关各词库，查看词条数 |
-| 添加短语 | 短语页输入编码+短语+权重 |
+| 添加短语 | 短语页输入短语、编码和权重；文件格式为 `短语 \t 编码 \t 权重` |
 | 恢复配置 | 备份页选择备份点恢复 |
 
 ### 从源码构建 Build from Source

@@ -58,13 +58,7 @@ enum FileType: String, CaseIterable, Codable {
             return .lua
         }
         if lower.hasSuffix(".yaml") || lower.hasSuffix(".yml") {
-            // Check if it's a root-level config like default.yaml, squirrel.yaml
-            if ["default", "squirrel", "weasel", "ibus_rime", "installation", "user"].contains(where: { name in
-                lower == "\(name).yaml" || lower == "\(name).yml"
-            }) {
-                return .yaml
-            }
-            return .customPatch
+            return .yaml
         }
         if lower.hasSuffix(".txt") {
             return .text

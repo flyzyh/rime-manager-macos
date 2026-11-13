@@ -1,8 +1,10 @@
 import Foundation
 
 /// Represents a single file in the Rime configuration directory.
+/// 以文件路径作为身份：目录刷新后同一文件的新实例与旧实例可比较，
+/// 选中状态不会因 watcher 触发的重扫描而丢失。
 struct RimeConfigFile: Identifiable, Hashable {
-    let id = UUID()
+    var id: URL { url }
     let url: URL
     let name: String
     let fileType: FileType

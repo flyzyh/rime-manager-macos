@@ -90,6 +90,11 @@ struct InputSettingsView: View {
                 Text("input.shift_clear".localized).tag("clear")
                 Text("input.shift_noop".localized).tag("noop")
             }
+
+            Toggle("input.return_direct_commit".localized, isOn: Binding(
+                get: { inputSettings.returnDirectCommit },
+                set: { inputSettings.returnDirectCommit = $0 }
+            ))
         }
     }
 

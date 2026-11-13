@@ -163,23 +163,6 @@ final class SchemaAnalyzer {
             }
         }
 
-        // Also check the style section for the active scheme names
-        if let style = dict["style"] as? [String: Any] {
-            // light scheme
-            if let lightName = style["color_scheme"] as? String,
-               let lightDict = dict["preset_color_schemes"] as? [String: Any],
-               let schemeDict = lightDict[lightName] as? [String: Any] {
-                // Already added above
-            }
-
-            // dark scheme
-            if let darkName = style["color_scheme_dark"] as? String,
-               let darkDict = dict["preset_color_schemes"] as? [String: Any],
-               let schemeDict = darkDict[darkName] as? [String: Any] {
-                // Already added above
-            }
-        }
-
         return schemes
     }
 
@@ -188,18 +171,18 @@ final class SchemaAnalyzer {
         var scheme = ColorScheme(name: name)
         scheme.isDark = name.lowercased().contains("dark")
 
-        scheme.backColor = parseColor(dict["back_color"])
-        scheme.hilitedCandidateBackColor = parseColor(dict["hilited_candidate_back_color"])
-        scheme.labelColor = parseColor(dict["label_color"])
-        scheme.hilitedCandidateLabelColor = parseColor(dict["hilited_candidate_label_color"])
-        scheme.candidateTextColor = parseColor(dict["candidate_text_color"])
-        scheme.hilitedCandidateTextColor = parseColor(dict["hilited_candidate_text_color"])
-        scheme.commentTextColor = parseColor(dict["comment_text_color"])
-        scheme.hilitedCommentTextColor = parseColor(dict["hilited_comment_text_color"])
-        scheme.textColor = parseColor(dict["text_color"])
-        scheme.hilitedTextColor = parseColor(dict["hilited_text_color"])
-        scheme.borderColor = parseColor(dict["border_color"])
-        scheme.shadowColor = parseColor(dict["shadow_color"])
+        scheme.backColor = Self.parseColor(dict["back_color"])
+        scheme.hilitedCandidateBackColor = Self.parseColor(dict["hilited_candidate_back_color"])
+        scheme.labelColor = Self.parseColor(dict["label_color"])
+        scheme.hilitedCandidateLabelColor = Self.parseColor(dict["hilited_candidate_label_color"])
+        scheme.candidateTextColor = Self.parseColor(dict["candidate_text_color"])
+        scheme.hilitedCandidateTextColor = Self.parseColor(dict["hilited_candidate_text_color"])
+        scheme.commentTextColor = Self.parseColor(dict["comment_text_color"])
+        scheme.hilitedCommentTextColor = Self.parseColor(dict["hilited_comment_text_color"])
+        scheme.textColor = Self.parseColor(dict["text_color"])
+        scheme.hilitedTextColor = Self.parseColor(dict["hilited_text_color"])
+        scheme.borderColor = Self.parseColor(dict["border_color"])
+        scheme.shadowColor = Self.parseColor(dict["shadow_color"])
 
         scheme.alpha = dict["alpha"] as? Double
         scheme.cornerRadius = dict["corner_radius"] as? Double
@@ -251,13 +234,19 @@ final class SchemaAnalyzer {
         }
     }
 
-    private func parseColor(_ value: Any?) -> Color? {
+    /// Rime 颜色为 0xBBGGRR / 0xAABBGGRR（蓝在高字节、红在低字节，与常见 RGB 顺序相反）。
+    /// 6 位以内的整数值必须按不透明色补成 6 位 hex：补成 8 位会把高字节 00 当作
+    /// alpha=0 解析为全透明。
+    static func rimeIntToHex(_ int: Int) -> String {
+        int >= 0 && int <= 0xFFFFFF ? String(format: "%06X", int) : String(format: "%08X", int)
+    }
+
+    static func parseColor(_ value: Any?) -> Color? {
         if let hex = value as? String {
             return ColorScheme.parseHexColor(hex)
         }
         if let int = value as? Int {
-            let hex = String(format: "%08X", int)
-            return ColorScheme.parseHexColor(hex)
+            return ColorScheme.parseHexColor(rimeIntToHex(int))
         }
         return nil
     }

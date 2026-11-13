@@ -39,7 +39,7 @@ final class SchemaSettingsTests: XCTestCase {
         let settings = SchemaSettings()
         settings.scanSchemas(in: tempDir)
 
-        XCTAssertEqual(settings.availableSchemas.count, 2)
+        // Squirrel SharedSupport 的内置方案也会出现在列表中，这里只验证本地 fixture。
         XCTAssertTrue(settings.availableSchemas.contains { $0.id == "test_pinyin" })
         XCTAssertTrue(settings.availableSchemas.contains { $0.id == "test_wubi" })
     }
@@ -90,6 +90,36 @@ final class SchemaSettingsTests: XCTestCase {
         XCTAssertNotNil(patch["schema_list"])
         let list = patch["schema_list"] as? [[String: String]]
         XCTAssertEqual(list?.count, 3)
+    }
+
+    func testSchemaListPatchDefaultFirstAndOrderPreserved() throws {
+        // default.custom.yaml 中 schema_list 顺序：wubi 在前、pinyin 在后
+        let customYAML = """
+        patch:
+          schema_list:
+            - schema: test_wubi
+            - schema: test_pinyin
+            - schema: test_english
+        """
+        try customYAML.write(to: tempDir.appendingPathComponent("default.custom.yaml"), atomically: true, encoding: .utf8)
+
+        let schemaFile = """
+        schema:
+          schema_id: test_pinyin
+          name: 测试拼音
+        """
+        try schemaFile.write(to: tempDir.appendingPathComponent("test_pinyin.schema.yaml"), atomically: true, encoding: .utf8)
+
+        let settings = SchemaSettings()
+        settings.scanSchemas(in: tempDir)
+
+        // 用户把 test_english 设为默认 → 必须排第一，其余保持原始顺序
+        settings.setDefault("test_english")
+
+        let patch = settings.schemaListPatch()
+        let list = try XCTUnwrap(patch["schema_list"] as? [[String: String]])
+        let ids = list.map { $0["schema"]! }
+        XCTAssertEqual(ids, ["test_english", "test_wubi", "test_pinyin"])
     }
 
     // MARK: - isDefault Tests
