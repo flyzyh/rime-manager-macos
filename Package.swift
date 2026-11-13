@@ -13,10 +13,7 @@ let package = Package(
         .executableTarget(
             name: "RimeManager",
             dependencies: ["Yams"],
-            path: "RimeManager",
-            resources: [
-                .process("Resources")
-            ]
+            path: "RimeManager"
         ),
         .testTarget(
             name: "RimeManagerTests",
