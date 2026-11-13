@@ -7,6 +7,7 @@ struct AdaptiveGlassModifier: ViewModifier {
     var cornerRadius: CGFloat = 12
 
     func body(content: Content) -> some View {
+        #if compiler(>=6.3)
         if #available(macOS 26, *) {
             content
                 .glassEffect(.regular, in: .rect(cornerRadius: cornerRadius))
@@ -14,6 +15,10 @@ struct AdaptiveGlassModifier: ViewModifier {
             content
                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: cornerRadius))
         }
+        #else
+        content
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: cornerRadius))
+        #endif
     }
 }
 
@@ -22,6 +27,7 @@ struct AdaptiveGlassClearModifier: ViewModifier {
     var cornerRadius: CGFloat = 12
 
     func body(content: Content) -> some View {
+        #if compiler(>=6.3)
         if #available(macOS 26, *) {
             content
                 .glassEffect(.clear, in: .rect(cornerRadius: cornerRadius))
@@ -29,6 +35,10 @@ struct AdaptiveGlassClearModifier: ViewModifier {
             content
                 .background(.thinMaterial, in: RoundedRectangle(cornerRadius: cornerRadius))
         }
+        #else
+        content
+            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: cornerRadius))
+        #endif
     }
 }
 
@@ -59,6 +69,7 @@ struct AdaptiveGlassContainer<Content: View>: View {
     }
 
     var body: some View {
+        #if compiler(>=6.3)
         if #available(macOS 26, *) {
             GlassEffectContainer(spacing: spacing) {
                 content
@@ -66,5 +77,8 @@ struct AdaptiveGlassContainer<Content: View>: View {
         } else {
             content
         }
+        #else
+        content
+        #endif
     }
 }
