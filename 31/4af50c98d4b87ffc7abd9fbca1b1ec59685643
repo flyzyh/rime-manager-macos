@@ -1,0 +1,48 @@
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.0.8",
+  "base_commit_sha": "314af50c98d4b87ffc7abd9fbca1b1ec59685643",
+  "prompts": {
+    "9adf622e495352f2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "rollout-2026-11-12T15-05-48-01a1ce93-b2ac-79a2-bd28-b8508ae946d0",
+        "model": "unknown"
+      },
+      "human_author": "flyzyh <flyzyh@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 0,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    }
+  },
+  "commit_stats": {
+    "git_diff_added_lines": 14,
+    "git_diff_deleted_lines": 0,
+    "ai_additions": 0,
+    "ai_accepted": 0,
+    "BYMC": 14,
+    "mixed_additions": 0,
+    "BYAC": 0,
+    "BYRC": 0,
+    "per_file": {
+      "RimeManager/Utilities/GlassEffects.swift": {
+        "BYMC": [
+          "10",
+          "18-21",
+          "30",
+          "38-41",
+          "72",
+          "80-82"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      }
+    }
+  },
+  "ipa_account": "zhouyuhan",
+  "commit_timestamp": 1794535176,
+  "requirement_id": ""
+}
