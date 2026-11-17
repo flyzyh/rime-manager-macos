@@ -1,0 +1,174 @@
+.github/workflows/build.yml
+  9adf622e495352f2 12-13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.0.8",
+  "base_commit_sha": "20d6a635e4bd10d966aeecf5486ffda3681c8fde",
+  "prompts": {
+    "1700d28a8afb46d2": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1ce93-b2ac-79a2-bd28-b8508ae946d0",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "flyzyh <flyzyh@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 0,
+      "overriden_lines": 0
+    },
+    "9adf622e495352f2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "rollout-2026-11-12T15-05-48-01a1ce93-b2ac-79a2-bd28-b8508ae946d0",
+        "model": "unknown"
+      },
+      "human_author": "flyzyh <flyzyh@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    }
+  },
+  "commit_stats": {
+    "git_diff_added_lines": 1162,
+    "git_diff_deleted_lines": 64,
+    "ai_additions": 2,
+    "ai_accepted": 2,
+    "BYMC": 1142,
+    "mixed_additions": 0,
+    "BYAC": 2,
+    "BYRC": 0,
+    "per_file": {
+      ".github/workflows/build.yml": {
+        "BYMC": [],
+        "BYAC": [
+          "12-13"
+        ],
+        "BYRC": []
+      },
+      "README.md": {
+        "BYMC": [
+          "55",
+          "111"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/App/RimeManagerApp.swift": {
+        "BYMC": [
+          "26-27"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Models/ThemeCatalog.swift": {
+        "BYMC": [
+          "1-374"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Utilities/GlassEffects.swift": {
+        "BYMC": [
+          "57-116"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Utilities/LocaleManager.swift": {
+        "BYMC": [
+          "250-263",
+          "354-358"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Views/Components/CandidatePreviewView.swift": {
+        "BYMC": [
+          "28-29",
+          "52-62",
+          "68-72"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Views/MainView.swift": {
+        "BYMC": [
+          "145"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Views/Settings/AppearanceSettingsView.swift": {
+        "BYMC": [
+          "24-35",
+          "46",
+          "130-131",
+          "134-136",
+          "141-145",
+          "163-167",
+          "202-208",
+          "385"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "RimeManager/Views/Settings/ThemeGalleryView.swift": {
+        "BYMC": [
+          "1-358"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "Tests/ThemeCatalogTests.swift": {
+        "BYMC": [
+          "1-174"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "docs/memory/MEMORY.md": {
+        "BYMC": [
+          "1-3"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "docs/memory/handoff/2026-09-04-full-code-review-and-bugfix.md": {
+        "BYMC": [
+          "1-55"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "docs/memory/project-rime-manager-writeback-rules.md": {
+        "BYMC": [
+          "1-21"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "docs/memory/zcode-memories/MEMORY.md": {
+        "BYMC": [
+          "1-3"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      },
+      "docs/memory/zcode-memories/rime-patch-semantics.md": {
+        "BYMC": [
+          "1-16"
+        ],
+        "BYAC": [],
+        "BYRC": []
+      }
+    }
+  },
+  "ipa_account": "zhouyuhan",
+  "commit_timestamp": 1794906367,
+  "requirement_id": ""
+}
