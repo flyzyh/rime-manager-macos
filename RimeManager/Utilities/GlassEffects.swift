@@ -54,6 +54,66 @@ extension View {
     func adaptiveGlassClear(cornerRadius: CGFloat = 12) -> some View {
         modifier(AdaptiveGlassClearModifier(cornerRadius: cornerRadius))
     }
+
+    /// Applies a full-window clear Liquid Glass surface on macOS 26+.
+    /// The fallback intentionally uses a lighter material than card glass.
+    func adaptiveWindowGlass(cornerRadius: CGFloat = 0) -> some View {
+        modifier(AdaptiveWindowGlassModifier(cornerRadius: cornerRadius))
+    }
+}
+
+/// Full-window glass is handled by the root AppKit glass view on macOS 26+.
+/// SwiftUI only provides a fallback here, which avoids stacking two glass layers.
+struct AdaptiveWindowGlassModifier: ViewModifier {
+    var cornerRadius: CGFloat = 0
+
+    func body(content: Content) -> some View {
+        content
+            .background {
+                Rectangle()
+                    .fill(.ultraThinMaterial)
+                    .opacity(0.55)
+                    .ignoresSafeArea()
+            }
+    }
+}
+
+// MARK: - Root Window Glass
+
+@MainActor
+enum RootWindowGlass {
+    private static weak var installedContentView: NSView?
+
+    /// Replaces the window's root content view with an AppKit Liquid Glass container.
+    /// AppKit's `NSGlassEffectView` samples the desktop behind the window and is visibly
+    /// stronger than the SwiftUI glass modifier, especially for NavigationSplitView.
+    static func install(in window: NSWindow) {
+        guard let content = window.contentView else { return }
+        guard installedContentView !== content else { return }
+
+        #if compiler(>=6.3)
+        if #available(macOS 26.0, *) {
+            let glass = NSGlassEffectView(frame: content.frame)
+            glass.style = .clear
+            glass.tintColor = nil
+            glass.cornerRadius = 0
+            if #available(macOS 27.0, *) {
+                glass.effectIsInteractive = true
+            }
+
+            content.removeFromSuperview()
+            glass.contentView = content
+            window.contentView = glass
+
+            glass.autoresizingMask = [.width, .height]
+            content.autoresizingMask = [.width, .height]
+            installedContentView = glass
+            return
+        }
+        #endif
+
+        installedContentView = content
+    }
 }
 
 // MARK: - Glass Container

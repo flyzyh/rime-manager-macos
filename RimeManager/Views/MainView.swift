@@ -75,7 +75,6 @@ struct MainView: View {
             sidebar
         } detail: {
             detailView
-                .background(.regularMaterial)
         }
         .navigationSplitViewStyle(.automatic)
         .toolbar(removing: .sidebarToggle)
@@ -143,6 +142,7 @@ struct MainView: View {
         }
         .animation(.spring(response: 0.3), value: feedback.toast?.id)
         .id(locale.currentLocale)
+        .adaptiveWindowGlass()
     }
 
     // MARK: - Sidebar

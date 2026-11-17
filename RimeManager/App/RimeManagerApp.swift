@@ -23,6 +23,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             window.backgroundColor = .clear
             window.isOpaque = false
             window.hasShadow = true
+            window.ignoresMouseEvents = false
+            RootWindowGlass.install(in: window)
         }
     }
 }

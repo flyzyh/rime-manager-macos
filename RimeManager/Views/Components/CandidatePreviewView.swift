@@ -25,6 +25,8 @@ struct CandidatePreviewView: View {
     private var candidateWindow: some View {
         let allWords = ["暗暗", "安安", "嗷嗷", "氨水", "爱爱", "暗暗", "哎哎", "安安", "暗暗"]
         let words = Array(allWords.prefix(inputSettings.candidateCount))
+        let isTranslucent = config.translucency
+        let panelOpacity = isTranslucent ? (scheme?.schemeAlpha ?? config.alpha) : 1.0
 
         return VStack(alignment: .leading, spacing: 0) {
             // Preedit line (only when not inline)
@@ -47,13 +49,27 @@ struct CandidatePreviewView: View {
             }
         }
         .padding(CGFloat(max(Int(config.borderHeight), 6)))
-        .background(scheme?.parsedBackColor ?? Color(nsColor: .windowBackgroundColor))
+        .background {
+            ZStack {
+                if isTranslucent && config.blurEnabled {
+                    Rectangle().fill(.regularMaterial)
+                }
+
+                Rectangle()
+                    .fill(scheme?.parsedBackColor ?? Color(nsColor: .windowBackgroundColor))
+                    .opacity(panelOpacity)
+            }
+        }
         .clipShape(RoundedRectangle(cornerRadius: config.cornerRadius))
         .overlay(
             RoundedRectangle(cornerRadius: config.cornerRadius)
                 .stroke(scheme?.parsedBorderColor ?? .secondary.opacity(0.2))
         )
-        .opacity(config.alpha)
+        .shadow(
+            color: scheme?.parsedShadowColor ?? .black.opacity(0.12),
+            radius: max(config.shadowSize * 0.8, 5),
+            y: 3
+        )
     }
 
     // MARK: - Preedit

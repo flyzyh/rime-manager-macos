@@ -9,6 +9,8 @@ on:
 jobs:
   build:
     runs-on: macos-15
+    env:
+      CODESIGN_IDENTITY: -
     steps:
       - uses: actions/checkout@v4
 

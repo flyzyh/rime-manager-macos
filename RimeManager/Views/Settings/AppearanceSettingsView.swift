@@ -21,6 +21,18 @@ struct AppearanceSettingsView: View {
                 previewAndColorContent
             }
 
+            Section {
+                ThemeGalleryView(
+                    config: config,
+                    previewDark: $previewDark,
+                    selectedThemeID: $selectedSchemeName
+                )
+            }
+
+            Section {
+                activeSchemeContent
+            }
+
             layoutSection
             fontSection
             spacingSection
@@ -31,6 +43,7 @@ struct AppearanceSettingsView: View {
         .navigationTitle("nav.appearance".localized)
         .onAppear { syncSchemeName() }
         .onChange(of: previewDark) { _, _ in syncSchemeName() }
+        .onChange(of: selectedSchemeName) { _, _ in syncSchemeName() }
         .onChange(of: config.colorSchemeLightName) { _, _ in if !previewDark { syncSchemeName() } }
         .onChange(of: config.colorSchemeDarkName) { _, _ in if previewDark { syncSchemeName() } }
     }
@@ -114,39 +127,44 @@ struct AppearanceSettingsView: View {
         // Live preview
         CandidatePreviewView(config: config, inputSettings: inputSettings, isDark: $previewDark)
             .padding(.vertical, 4)
-
-        Divider()
-
-        // Scheme picker - compact HStack layout
-        HStack(spacing: 8) {
-            Text(previewDark
-                 ? "appearance.dark_scheme".localized
-                 : "appearance.light_scheme".localized)
-                .font(.body)
-
-            Picker("", selection: Binding(
-                get: { selectedSchemeName },
-                set: { updateSchemeName($0) }
-            )) {
-                ForEach(Array(config.colorSchemes.keys.sorted()), id: \.self) { name in
-                    HStack(spacing: 6) {
-                        if let cs = config.colorSchemes[name] {
-                            Circle()
-                                .fill(cs.parsedHilitedBack)
-                                .frame(width: 10, height: 10)
-                        }
-                        Text(name)
-                    }
-                    .tag(name)
-                }
-            }
-            .labelsHidden()
+            .padding(.horizontal, 2)
+            .padding(.vertical, 3)
         }
 
-        // Color editor for the active scheme
-        if let scheme = activeScheme {
-            ColorSchemeEditorView(scheme: scheme, title: selectedSchemeName)
-                .id(selectedSchemeName)
+    @ViewBuilder
+    private var activeSchemeContent: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Scheme picker - compact HStack layout
+            HStack(spacing: 8) {
+                Text(previewDark
+                     ? "appearance.dark_scheme".localized
+                     : "appearance.light_scheme".localized)
+                    .font(.body)
+
+                Picker("", selection: Binding(
+                    get: { selectedSchemeName },
+                    set: { updateSchemeName($0) }
+                )) {
+                    ForEach(Array(config.colorSchemes.keys.sorted()), id: \.self) { name in
+                        HStack(spacing: 6) {
+                            if let cs = config.colorSchemes[name] {
+                                Circle()
+                                    .fill(cs.parsedHilitedBack)
+                                    .frame(width: 10, height: 10)
+                            }
+                            Text(name)
+                        }
+                        .tag(name)
+                    }
+                }
+                .labelsHidden()
+            }
+
+            // Color editor for the active scheme
+            if let scheme = activeScheme {
+                ColorSchemeEditorView(scheme: scheme, title: selectedSchemeName)
+                    .id(selectedSchemeName)
+            }
         }
     }
 
@@ -180,6 +198,14 @@ struct AppearanceSettingsView: View {
                 ),
                 range: 3...9
             )
+
+            if config.textOrientation == .horizontal,
+               config.candidateListLayout == .linear,
+               inputSettings.candidateCount > 7 {
+                Label("appearance.wrapped_highlight_warning".localized, systemImage: "exclamationmark.triangle.fill")
+                    .font(.callout)
+                    .foregroundStyle(.orange)
+            }
 
             Toggle("appearance.inline_preedit".localized, isOn: Binding(
                 get: { config.inlinePreedit },
@@ -356,7 +382,7 @@ struct AppearanceSettingsView: View {
                     schemeKeyPath: \.schemeAlpha,
                     configKeyPath: \.alpha
                 ),
-                range: 0.3...1.0
+                range: 0.25...1.0
             )
 
             doubleSliderRow(

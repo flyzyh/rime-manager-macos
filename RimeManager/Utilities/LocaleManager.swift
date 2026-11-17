@@ -247,6 +247,20 @@ final class LocaleManager: ObservableObject, @unchecked Sendable {
         "appearance.preview_mode": ["en": "Preview", "zh-Hans": "预览", "zh-Hant": "預覽"],
         "appearance.preview_light": ["en": "Light", "zh-Hans": "亮色", "zh-Hant": "亮色"],
         "appearance.preview_dark": ["en": "Dark", "zh-Hans": "暗色", "zh-Hant": "暗色"],
+        "appearance.theme_gallery": ["en": "Theme Gallery", "zh-Hans": "主题库", "zh-Hant": "主題庫"],
+        "appearance.theme_gallery_subtitle": ["en": "15 curated Liquid Glass and community themes", "zh-Hans": "15 个精选 Liquid Glass 与社区主题", "zh-Hant": "15 個精選 Liquid Glass 與社群主題"],
+        "theme.filter_all": ["en": "All", "zh-Hans": "全部", "zh-Hant": "全部"],
+        "theme.filter_light": ["en": "Light", "zh-Hans": "亮色", "zh-Hant": "亮色"],
+        "theme.filter_dark": ["en": "Dark", "zh-Hans": "暗色", "zh-Hant": "暗色"],
+        "theme.active": ["en": "Active", "zh-Hans": "当前", "zh-Hant": "當前"],
+        "theme.apply": ["en": "Apply", "zh-Hans": "应用", "zh-Hant": "應用"],
+        "theme.copy": ["en": "Copy as Custom", "zh-Hans": "复制为自定义", "zh-Hant": "複製為自訂"],
+        "theme.details": ["en": "Details", "zh-Hans": "详情", "zh-Hant": "詳情"],
+        "theme.author": ["en": "Author", "zh-Hans": "作者", "zh-Hant": "作者"],
+        "theme.license": ["en": "License", "zh-Hans": "许可", "zh-Hant": "授權"],
+        "theme.source": ["en": "Source", "zh-Hans": "来源", "zh-Hant": "來源"],
+        "theme.low_contrast": ["en": "Low contrast combination", "zh-Hans": "对比度偏低", "zh-Hant": "對比度偏低"],
+        "theme.applied": ["en": "Theme ready to deploy", "zh-Hans": "主题已准备，部署后生效", "zh-Hant": "主題已準備，部署後生效"],
 
         // Input settings
         "input.section_mode": ["en": "Default Mode", "zh-Hans": "默认模式", "zh-Hant": "預設模式"],
@@ -337,6 +351,11 @@ final class LocaleManager: ObservableObject, @unchecked Sendable {
         "appearance.remember_size": ["en": "Remember Panel Size", "zh-Hans": "记住面板尺寸", "zh-Hant": "記住面板尺寸"],
         "appearance.candidate_format": ["en": "Candidate Format", "zh-Hans": "候选格式", "zh-Hant": "候選格式"],
         "appearance.status_message": ["en": "Status Message", "zh-Hans": "状态通知样式", "zh-Hant": "狀態通知樣式"],
+        "appearance.wrapped_highlight_warning": [
+            "en": "Wrapped linear candidates can trigger a Squirrel highlight-alignment bug. Use 7 or fewer candidates, or stacked/vertical layout.",
+            "zh-Hans": "横排候选换行会触发 Squirrel 高亮框错位问题。建议每页最多 7 个候选，或改用堆叠/竖向布局。",
+            "zh-Hant": "橫排候選換行會觸發 Squirrel 高亮框錯位問題。建議每頁最多 7 個候選，或改用堆疊/直向排版。",
+        ],
         "appearance.comment_font": ["en": "Comment Font", "zh-Hans": "注释字体", "zh-Hant": "註釋字體"],
         "appearance.comment_size": ["en": "Comment Size", "zh-Hans": "注释字号", "zh-Hant": "註釋字號"],
 

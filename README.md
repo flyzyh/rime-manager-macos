@@ -52,6 +52,7 @@ A native macOS app for managing Rime input method configurations visually. Desig
 - 透明度、圆角、间距滑杆
 - 半透明背景、背景模糊开关
 - 配色方案管理（亮色/暗色/自动跟随系统）
+- 内置 15 套精选主题，包含 Liquid Glass 亮/暗方案
 - 8 种颜色独立取色器（背景、文字、高亮背景、候选字、序号、注释、边框、阴影）
 
 ### ⌨️ 输入行为 Input
@@ -107,7 +108,7 @@ A native macOS app for managing Rime input method configurations visually. Desig
 - 一键部署 Rime
 - 保存配置但不部署
 - Toast 反馈提示
-- 液态玻璃（Liquid Glass）界面
+- 液态玻璃（Liquid Glass）界面（macOS 26+ 使用 AppKit `NSGlassEffectView`）
 
 ---
 
